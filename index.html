@@ -2269,7 +2269,14 @@ function openRecordInDetail(clientId,recId){
 const SUPABASE_URL = 'https://oglqkingzamedklujdaf.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_XsPVrZaPUEAfpw9-YEiiZQ_j3WEGTc8';
 const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    detectSessionInUrl: true,
+    persistSession: true,
+    autoRefreshToken: true,
+    flowType: 'implicit'
+  }
+});
 let currentUser = null;
 
 function showLoginScreen() {
@@ -2408,38 +2415,44 @@ function hideLoadingScreen() {
 
 // ── INIT ──
 let _crmLoaded = false;
+
+async function startCRM(user) {
+  if (_crmLoaded) return;
+  _crmLoaded = true;
+  currentUser = user;
+  renderUserBadge(user);
+  hideLoginScreen();
+  await loadCRMData();
+  initSourceSelects(); initAgeDropdowns(); initRangeYears();
+  renderClientList(); renderTagBank(); loadCfg();
+  updateHeaderActions('client');
+  // 清除 URL 的 hash token，避免重新整理時重複觸發
+  if (window.location.hash && window.location.hash.includes('access_token')) {
+    history.replaceState(null, '', window.location.pathname);
+  }
+  console.log('✅ 盼盼睫研 CRM 啟動完成');
+}
+
 async function appInit() {
   try {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session) {
-      _crmLoaded = true;
-      currentUser = session.user;
-      renderUserBadge(session.user);
-      hideLoginScreen();
-      await loadCRMData();
-      initSourceSelects(); initAgeDropdowns(); initRangeYears();
-      renderClientList(); renderTagBank(); loadCfg();
-      updateHeaderActions('client');
-      console.log('✅ 盼盼睫研 CRM 啟動完成');
-    } else {
-      showLoginScreen();
-    }
-
+    // 先監聽 auth 狀態變化（包含從 URL hash 解析 token）
     sb.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session && !_crmLoaded) {
-        _crmLoaded = true;
-        currentUser = session.user;
-        renderUserBadge(session.user);
-        hideLoginScreen();
-        await loadCRMData();
-        initSourceSelects(); initAgeDropdowns(); initRangeYears();
-        renderClientList(); renderTagBank(); loadCfg();
-        updateHeaderActions('client');
+      console.log('auth event:', event);
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+        await startCRM(session.user);
       } else if (event === 'SIGNED_OUT') {
         _crmLoaded = false;
         showLoginScreen();
       }
     });
+
+    // 同時檢查現有 session
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      await startCRM(session.user);
+    } else {
+      showLoginScreen();
+    }
   } catch(err) {
     console.error('❌ 初始化錯誤:', err);
     showLoginScreen();
