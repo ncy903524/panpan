@@ -2435,10 +2435,25 @@ async function startCRM(user) {
 
 async function appInit() {
   try {
-    // 先監聽 auth 狀態變化（包含從 URL hash 解析 token）
+    // 處理 URL hash 裡的 token（Google OAuth 跳回來時）
+    const hash = window.location.hash;
+    if (hash && hash.includes('access_token')) {
+      // 讓 Supabase 從 URL 解析 session，等它處理完
+      await new Promise(resolve => setTimeout(resolve, 800));
+    }
+
+    // 先檢查現有 session
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      await startCRM(session.user);
+    } else {
+      showLoginScreen();
+    }
+
+    // 監聽後續 auth 狀態變化
     sb.auth.onAuthStateChange(async (event, session) => {
-      console.log('auth event:', event);
-      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+      console.log('auth event:', event, !!session);
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
         await startCRM(session.user);
       } else if (event === 'SIGNED_OUT') {
         _crmLoaded = false;
@@ -2446,13 +2461,6 @@ async function appInit() {
       }
     });
 
-    // 同時檢查現有 session
-    const { data: { session } } = await sb.auth.getSession();
-    if (session) {
-      await startCRM(session.user);
-    } else {
-      showLoginScreen();
-    }
   } catch(err) {
     console.error('❌ 初始化錯誤:', err);
     showLoginScreen();
