@@ -1853,7 +1853,14 @@ function openCostSummaryDetail(){openSummaryModal('cost_detail');}
 
 // ── CONFIRM ──
 function showConfirm(msg,onOk){let ov=document.getElementById('confirm-overlay');if(!ov){ov=document.createElement('div');ov.id='confirm-overlay';ov.style.cssText='position:fixed;inset:0;background:rgba(30,25,18,0.55);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px';ov.innerHTML=`<div style="background:var(--card);border-radius:16px;padding:24px 20px;max-width:320px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.2)"><div id="confirm-msg" style="font-size:14px;line-height:1.7;color:var(--text);margin-bottom:20px;white-space:pre-line"></div><div style="display:flex;gap:8px"><button class="btn btn-secondary" style="flex:1" id="confirm-cancel">取消</button><button class="btn btn-danger" style="flex:1" id="confirm-ok">確定</button></div></div>`;document.body.appendChild(ov);}document.getElementById('confirm-msg').textContent=msg;ov.style.display='flex';document.getElementById('confirm-cancel').onclick=()=>{ov.style.display='none';};document.getElementById('confirm-ok').onclick=()=>{ov.style.display='none';onOk();};}
-function confirmDel(id,name){showConfirm(`確定要刪除「${name}」的所有資料嗎？\n此操作無法復原。`,()=>{clients=clients.filter(c=>c.id!==id);delete recordsDB[id];delete couponsDB[id];lsSave(STORE_KEY,clients);lsSave(RECORDS_KEY,recordsDB);lsSave(COUPONS_KEY,couponsDB);renderClientList();renderTagBank();showToast('🗑 已刪除：'+name);});}
+function confirmDel(id,name){showConfirm(`確定要刪除「${name}」的所有資料嗎？\n此操作無法復原。`,()=>{
+  clients=clients.filter(c=>c.id!==id);
+  delete recordsDB[id]; delete couponsDB[id];
+  lsSave(STORE_KEY,clients); lsSave(RECORDS_KEY,recordsDB); lsSave(COUPONS_KEY,couponsDB);
+  // Supabase 刪除（CASCADE 會自動刪 records/coupons）
+  if(currentUser) sb.from('clients').delete().eq('id',id).then(({error})=>{if(error)console.error('delete client:',error);});
+  renderClientList(); renderTagBank(); showToast('🗑 已刪除：'+name);
+});}
 
 // ── CLIENT DETAIL ──
 function openClientDetail(id){
@@ -1955,7 +1962,14 @@ function saveRecord(){
   if(c&&recTags.length){const ex=new Set(c.tags||[]);recTags.forEach(t=>{ex.add(t);if(!tagBank.includes(t)&&tagBank.length<50)tagBank.push(t);});c.tags=[...ex];lsSave(STORE_KEY,clients);lsSave(TAGBANK_KEY,tagBank);}
   lsSave(RECORDS_KEY,recordsDB);renderClientList();renderRecords(currentClientId);renderTagBank();closeModal('modal-add-record');showToast(currentRecordId?'✅ 紀錄已更新':'✅ 紀錄已儲存');currentRecordId=null;
 }
-function confirmDelRec(recId,svcName){showConfirm(`確定要刪除這筆「${svcName}」施作紀錄？\n此操作無法復原。`,()=>{recordsDB[currentClientId]=(recordsDB[currentClientId]||[]).filter(r=>r.id!==recId);const c=clients.find(x=>x.id===currentClientId);if(c){const svcs=new Set();(recordsDB[currentClientId]||[]).forEach(r=>{if(r.svc)svcs.add(r.svc);});c.services=[...svcs];lsSave(STORE_KEY,clients);}lsSave(RECORDS_KEY,recordsDB);renderClientList();renderRecords(currentClientId);showToast('🗑 施作紀錄已刪除');});}
+function confirmDelRec(recId,svcName){showConfirm(`確定要刪除這筆「${svcName}」施作紀錄？\n此操作無法復原。`,()=>{
+  recordsDB[currentClientId]=(recordsDB[currentClientId]||[]).filter(r=>r.id!==recId);
+  const c=clients.find(x=>x.id===currentClientId);
+  if(c){const svcs=new Set();(recordsDB[currentClientId]||[]).forEach(r=>{if(r.svc)svcs.add(r.svc);});c.services=[...svcs];lsSave(STORE_KEY,clients);}
+  lsSave(RECORDS_KEY,recordsDB);
+  if(currentUser) sb.from('records').delete().eq('id',recId).then(({error})=>{if(error)console.error('delete record:',error);});
+  renderClientList(); renderRecords(currentClientId); showToast('🗑 施作紀錄已刪除');
+});}
 function selectRecSvc(el){document.querySelectorAll('#rec-service-grid .service-item').forEach(x=>x.classList.remove('selected'));el.classList.add('selected');const e=document.getElementById('rec-svc-err');if(e)e.style.display='none';}
 // currentCouponId declared in top block
 function addRecTag(){const input=document.getElementById('rec-tag-input');const val=input?.value.trim();if(!val)return;const tag=document.createElement('span');tag.className=`tag ${TC[recTagIdx++%TC.length]}`;tag.style.cssText='font-size:11px;padding:3px 8px';tag.innerHTML=`${val} <span onclick="this.parentElement.remove()" style="cursor:pointer;opacity:0.6">×</span>`;document.getElementById('rec-tag-container')?.appendChild(tag);if(input)input.value='';}
@@ -1967,7 +1981,12 @@ function toggleCoupon(cpId){const cps=couponsDB[currentClientId]||[];const cp=cp
 function openAddCoupon(){currentCouponId=null;document.getElementById('coupon-modal-title').textContent='新增優惠';const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};sv('cp-type','🎂 生日優惠');sv('cp-desc','');sv('cp-amount','');sv('cp-issued',fD(NOW));sv('cp-validity','1y');sv('cp-status','unused');const e=document.getElementById('cp-err');if(e)e.style.display='none';openModal('modal-add-coupon');}
 function editCoupon(cpId){const cps=couponsDB[currentClientId]||[];const cp=cps.find(x=>x.id===cpId);if(!cp)return;currentCouponId=cpId;document.getElementById('coupon-modal-title').textContent='編輯優惠';const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};sv('cp-type',cp.type);sv('cp-desc',cp.desc);sv('cp-amount',cp.amount||0);sv('cp-issued',cp.issued);sv('cp-validity',cp.validity);sv('cp-status',cp.status);const e=document.getElementById('cp-err');if(e)e.style.display='none';openModal('modal-add-coupon');}
 function saveCoupon(){if(!couponsDB[currentClientId])couponsDB[currentClientId]=[];const cps=couponsDB[currentClientId];const data={type:document.getElementById('cp-type')?.value,desc:document.getElementById('cp-desc')?.value.trim()||'',amount:parseInt(document.getElementById('cp-amount')?.value)||0,issued:document.getElementById('cp-issued')?.value||fD(NOW),validity:document.getElementById('cp-validity')?.value||'1y',status:document.getElementById('cp-status')?.value||'unused'};if(currentCouponId){const idx=cps.findIndex(x=>x.id===currentCouponId);if(idx>-1)cps[idx]={...cps[idx],...data};}else{cps.push({id:'cp'+Date.now(),...data});}lsSave(COUPONS_KEY,couponsDB);renderCoupons(currentClientId);closeModal('modal-add-coupon');showToast(currentCouponId?'✅ 優惠已更新':'✅ 優惠已新增');currentCouponId=null;}
-function delCoupon(cpId,typeName){showConfirm(`確定刪除「${typeName}」優惠？`,()=>{couponsDB[currentClientId]=(couponsDB[currentClientId]||[]).filter(x=>x.id!==cpId);lsSave(COUPONS_KEY,couponsDB);renderCoupons(currentClientId);showToast('🗑 優惠已刪除');});}
+function delCoupon(cpId,typeName){showConfirm(`確定刪除「${typeName}」優惠？`,()=>{
+  couponsDB[currentClientId]=(couponsDB[currentClientId]||[]).filter(x=>x.id!==cpId);
+  lsSave(COUPONS_KEY,couponsDB);
+  if(currentUser) sb.from('coupons').delete().eq('id',cpId).then(({error})=>{if(error)console.error('delete coupon:',error);});
+  renderCoupons(currentClientId); showToast('🗑 優惠已刪除');
+});}
 // currentCouponId declared in top block
 
 // ── COST PAGE (with month selector) ──
@@ -2013,7 +2032,12 @@ function openAddExpense(expKey){currentExpenseId=null;currentExpSvc=expKey;docum
 function openEditExpense(expKey,id){const exp=(expensesDB[expKey]||[]).find(x=>x.id===id);if(!exp)return;currentExpenseId=id;currentExpSvc=expKey;document.getElementById('expense-modal-title').textContent='編輯支出（'+expKey+'）';const items=SVC_ITEMS[expKey]||SVC_ITEMS['睫毛'],channels=SVC_CHANNELS[expKey]||SVC_CHANNELS['睫毛'];const g=document.getElementById('expense-item-grid');if(g)g.innerHTML=items.map(t=>`<span onclick="selExpItem('${t}')" style="padding:4px 10px;border-radius:14px;font-size:12px;cursor:pointer;background:var(--bg2);border:1px solid var(--border);color:var(--text2)">${t}</span>`).join('');const cs=document.getElementById('expense-channel');if(cs){cs.innerHTML=channels.map(ch=>`<option>${ch}</option>`).join('');cs.value=exp.channel||channels[0];}const ci=document.getElementById('expense-item-custom');if(ci)ci.value=exp.item;const sv=(id2,v)=>{const el=document.getElementById(id2);if(el)el.value=v||'';};sv('expense-date',exp.date);sv('expense-amount',exp.amount);sv('expense-note',exp.note);openModal('modal-add-expense');}
 function selExpItem(name){const el=document.getElementById('expense-item-custom');if(el)el.value=name;document.querySelectorAll('#expense-item-grid span').forEach(s=>{const ok=s.textContent===name;s.style.background=ok?'var(--accent-pale)':'var(--bg2)';s.style.color=ok?'var(--accent)':'var(--text2)';s.style.borderColor=ok?'var(--accent)':'var(--border)';});}
 function saveExpense(){const item=document.getElementById('expense-item-custom')?.value.trim(),date=document.getElementById('expense-date')?.value,amount=parseInt(document.getElementById('expense-amount')?.value)||0;const e=document.getElementById('expense-err');if(!item){if(e){e.textContent='⚠ 請選擇或輸入耗材名稱';e.style.display='block';}return;}if(!date){if(e){e.textContent='⚠ 請選擇日期';e.style.display='block';}return;}if(!amount){if(e){e.textContent='⚠ 請輸入金額';e.style.display='block';}return;}if(e)e.style.display='none';if(!expensesDB[currentExpSvc])expensesDB[currentExpSvc]=[];const exps=expensesDB[currentExpSvc];const data={item,date,amount,channel:document.getElementById('expense-channel')?.value||'',note:document.getElementById('expense-note')?.value.trim()||''};if(currentExpenseId){const idx=exps.findIndex(x=>x.id===currentExpenseId);if(idx>-1)exps[idx]={...exps[idx],...data};}else{exps.push({id:'e'+Date.now(),...data});}lsSave(EXPENSE_KEY,expensesDB);renderExpSvc(currentExpSvc);closeModal('modal-add-expense');showToast(currentExpenseId?'✅ 支出已更新':'✅ 支出已新增');currentExpenseId=null;}
-function confirmDelExp(expKey,id){showConfirm('確定刪除此支出紀錄？',()=>{expensesDB[expKey]=(expensesDB[expKey]||[]).filter(x=>x.id!==id);lsSave(EXPENSE_KEY,expensesDB);renderExpSvc(currentExpSvc);showToast('🗑 支出已刪除');});}
+function confirmDelExp(expKey,id){showConfirm('確定刪除此支出紀錄？',()=>{
+  expensesDB[expKey]=(expensesDB[expKey]||[]).filter(x=>x.id!==id);
+  lsSave(EXPENSE_KEY,expensesDB);
+  if(currentUser) sb.from('expenses').delete().eq('id',id).then(({error})=>{if(error)console.error('delete expense:',error);});
+  renderExpSvc(currentExpSvc); showToast('🗑 支出已刪除');
+});}
 // currentCouponId declared in top block
 
 // ── COST CLIENT SEARCH ──
@@ -2381,15 +2405,116 @@ async function loadCRMData() {
     if (sourcesData) sourcesDB = sourcesData;
     remindedDB = remindedData || {};
 
-    // Override lsSave to sync to Supabase
-    const keyMap = {
+    // ── Override lsSave：攔截所有寫入，同步到 Supabase ──
+    const kvKeyMap = {
       [CFG_KEY]: 'crm_cfg', [TAGBANK_KEY]: 'crm_tagbank',
       [SOURCE_KEY]: 'crm_sources', [REMINDED_KEY]: 'crm_reminded'
     };
-    window._origLsSave = window.lsSave;
+
     window.lsSave = function(k, v) {
+      // 同步 localStorage
       try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {}
-      if (keyMap[k]) setKV(keyMap[k], v).catch(console.error);
+
+      // kv_store 類（設定、標籤、來源、提醒）
+      if (kvKeyMap[k]) {
+        setKV(kvKeyMap[k], v).catch(console.error);
+        return;
+      }
+
+      // clients → upsert 每一筆
+      if (k === STORE_KEY && Array.isArray(v)) {
+        v.forEach(client => {
+          sb.from('clients').upsert({
+            id: client.id,
+            user_id: currentUser.id,
+            name: client.name,
+            nickname: client.nickname || '',
+            gender: client.gender || '女',
+            age: client.age || null,
+            phone: client.phone || '',
+            birthday: client.birthday || null,
+            overseas: client.overseas || false,
+            location: client.location || '台中',
+            source: client.source || '',
+            note: client.note || '',
+            tags: client.tags || [],
+            services: client.services || [],
+            line_url: client.lineUrl || ''
+          }, { onConflict: 'id' }).then(({ error }) => {
+            if (error) console.error('upsert client error:', error);
+          });
+        });
+        return;
+      }
+
+      // records → upsert 所有 client 的所有紀錄
+      if (k === RECORDS_KEY && typeof v === 'object') {
+        Object.entries(v).forEach(([clientId, recs]) => {
+          if (!Array.isArray(recs)) return;
+          recs.forEach(r => {
+            sb.from('records').upsert({
+              id: r.id,
+              user_id: currentUser.id,
+              client_id: clientId,
+              date: r.date,
+              service: r.service || '',
+              amount: r.amount || 0,
+              note: r.note || '',
+              tags: r.tags || [],
+              next_date: r.nextDate || null,
+              payment: r.payment || ''
+            }, { onConflict: 'id' }).then(({ error }) => {
+              if (error) console.error('upsert record error:', error);
+            });
+          });
+        });
+        return;
+      }
+
+      // coupons
+      if (k === COUPONS_KEY && typeof v === 'object') {
+        Object.entries(v).forEach(([clientId, cps]) => {
+          if (!Array.isArray(cps)) return;
+          cps.forEach(cp => {
+            sb.from('coupons').upsert({
+              id: cp.id,
+              user_id: currentUser.id,
+              client_id: clientId,
+              type: cp.type,
+              description: cp.desc || cp.description || '',
+              amount: cp.amount || 0,
+              issued: cp.issued || null,
+              validity: cp.validity || '1y',
+              status: cp.status || 'unused'
+            }, { onConflict: 'id' }).then(({ error }) => {
+              if (error) console.error('upsert coupon error:', error);
+            });
+          });
+        });
+        return;
+      }
+
+      // expenses
+      if (k === EXPENSE_KEY && typeof v === 'object') {
+        Object.entries(v).forEach(([category, exps]) => {
+          if (!Array.isArray(exps)) return;
+          exps.forEach(e => {
+            sb.from('expenses').upsert({
+              id: e.id,
+              user_id: currentUser.id,
+              category: category,
+              item: e.item || '',
+              date: e.date,
+              amount: e.amount || 0,
+              channel: e.channel || '',
+              note: e.note || ''
+            }, { onConflict: 'id' }).then(({ error }) => {
+              if (error) console.error('upsert expense error:', error);
+            });
+          });
+        });
+        return;
+      }
     };
 
     hideLoadingScreen();
