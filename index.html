@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -2285,7 +2286,7 @@ async function loginWithGoogle() {
   err.style.display = 'none';
   const { error } = await sb.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: window.location.href }
+    options: { redirectTo: 'https://ncy903524.github.io/panpan/' }
   });
   if (error) {
     err.textContent = '登入失敗：' + error.message;
@@ -2406,10 +2407,12 @@ function hideLoadingScreen() {
 }
 
 // ── INIT ──
+let _crmLoaded = false;
 async function appInit() {
   try {
     const { data: { session } } = await sb.auth.getSession();
     if (session) {
+      _crmLoaded = true;
       currentUser = session.user;
       renderUserBadge(session.user);
       hideLoginScreen();
@@ -2423,7 +2426,8 @@ async function appInit() {
     }
 
     sb.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
+      if (event === 'SIGNED_IN' && session && !_crmLoaded) {
+        _crmLoaded = true;
         currentUser = session.user;
         renderUserBadge(session.user);
         hideLoginScreen();
@@ -2432,6 +2436,7 @@ async function appInit() {
         renderClientList(); renderTagBank(); loadCfg();
         updateHeaderActions('client');
       } else if (event === 'SIGNED_OUT') {
+        _crmLoaded = false;
         showLoginScreen();
       }
     });
