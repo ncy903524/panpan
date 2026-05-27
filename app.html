@@ -1,0 +1,2234 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="盼盼">
+<meta name="theme-color" content="#5b7a6e">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>盼盼睫研 CRM</title>
+<!-- ── Supabase ── -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- 注入設定（GitHub Actions 會自動替換此段）-->
+<script>
+  window.SUPABASE_URL = 'https://oglqkingzamedklujdaf.supabase.co';
+  window.SUPABASE_ANON_KEY = 'sb_publishable_XsPVrZaPUEAfpw9-YEiiZQ_j3WEGTc8';
+</script>
+<script src="supabase-db.js"></script>
+<!-- PWA icon: Pantone 4174U (#5b7a6e) background, 盼 text -->
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='24' fill='%235b7a6e'/%3E%3Ctext x='60' y='78' font-family='serif' font-size='62' fill='white' text-anchor='middle' opacity='0.92'%3E盼%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='24' fill='%235b7a6e'/%3E%3Ctext x='60' y='78' font-family='serif' font-size='62' fill='white' text-anchor='middle'%3E盼%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="data:application/json,%7B%22name%22%3A%22%E7%9B%BC%E7%9B%BC%E7%9D%AB%E7%A0%94%22%2C%22short_name%22%3A%22%E7%9B%BC%E7%9B%BC%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%235b7a6e%22%2C%22theme_color%22%3A%22%235b7a6e%22%7D">
+<style>
+/* ── Google Fonts ── */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap');
+
+/* ── CSS Variables ── */
+:root {
+  /* Pantone 4174U ≈ #5b7a6e (muted teal-green) */
+  --tab-bg: #5b7a6e;
+  --tab-active: #ffffff;
+  --tab-inactive: rgba(255,255,255,0.55);
+
+  /* 米色+象牙白混合 */
+  --bg: #f5f0e8;
+  --bg2: #ede8dc;
+  --card: #faf7f2;
+  --card2: #f2ede3;
+  --border: #ddd5c3;
+  --border2: #cfc6b2;
+
+  /* Text */
+  --text: #2c2820;
+  --text2: #6b6050;
+  --text3: #9a8f7e;
+
+  /* Accent */
+  --accent: #5b7a6e;
+  --accent-light: #8aab9f;
+  --accent-pale: #e0ece8;
+  --red: #c0544a;
+  --red-pale: #fcecea;
+  --amber: #c08a3a;
+  --amber-pale: #fdf3e0;
+  --blue: #4a6e9a;
+  --blue-pale: #e4edf7;
+  --purple: #7a5a9a;
+  --purple-pale: #f0eaf7;
+  --pink: #b05a7a;
+  --pink-pale: #faeaf0;
+
+  --tab-h: 64px;
+  --header-h: 56px;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 2px 12px rgba(60,50,35,0.09);
+  --shadow-sm: 0 1px 4px rgba(60,50,35,0.07);
+
+  font-family: 'Noto Sans TC', sans-serif;
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); }
+button { cursor: pointer; border: none; background: none; font-family: inherit; }
+input, select, textarea { font-family: inherit; font-size: 14px; outline: none; }
+a { text-decoration: none; color: inherit; }
+
+/* ── App shell ── */
+#app { display: flex; flex-direction: column; height: 100vh; max-width: 430px; margin: 0 auto; position: relative; background: var(--bg); box-shadow: 0 0 40px rgba(0,0,0,0.12); }
+
+/* ── Header ── */
+.app-header {
+  height: var(--header-h);
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  flex-shrink: 0;
+  position: relative;
+}
+.app-header .logo {
+  width: 32px; height: 32px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 16px;
+}
+.app-header .title { font-size: 17px; font-weight: 600; color: var(--text); letter-spacing: 0.5px; }
+.app-header .subtitle { font-size: 11px; color: var(--text3); margin-top: 1px; }
+.app-header .header-right { margin-left: auto; display: flex; gap: 8px; }
+.icon-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--bg2); display: flex; align-items: center; justify-content: center;
+  color: var(--text2); font-size: 18px;
+  transition: background 0.15s;
+}
+.icon-btn:active { background: var(--border); }
+
+/* ── Scrollable content ── */
+.page-content {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(var(--tab-h) + 8px);
+}
+.page { display: none; padding: 0; }
+.page.active { display: block; }
+
+/* ── Section header ── */
+.sec-head {
+  padding: 16px 16px 8px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sec-title { font-size: 13px; font-weight: 600; color: var(--text2); letter-spacing: 1px; text-transform: uppercase; }
+.sec-action { font-size: 12px; color: var(--accent); font-weight: 500; }
+
+/* ── Cards ── */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  margin: 0 12px 0;
+  overflow: hidden;
+}
+.card-header {
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+}
+.card-title { font-size: 14px; font-weight: 600; }
+.card-body { padding: 12px 14px; }
+
+/* ── Stats row (dashboard style) ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 0 12px 0;
+}
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  box-shadow: var(--shadow-sm);
+}
+.stat-label { font-size: 11px; color: var(--text3); margin-bottom: 4px; }
+.stat-value { font-size: 22px; font-weight: 700; color: var(--text); }
+.stat-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.stat-badge { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 10px; margin-top: 4px; font-weight: 500; }
+
+/* ── Tag chips ── */
+.tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 20px;
+  font-size: 12px; font-weight: 500;
+  border: 1px solid transparent;
+}
+.tag.green  { background: var(--accent-pale); color: var(--accent); border-color: #c2d9d3; }
+.tag.amber  { background: var(--amber-pale);  color: var(--amber);  border-color: #f0d9b0; }
+.tag.red    { background: var(--red-pale);    color: var(--red);    border-color: #f0c8c4; }
+.tag.blue   { background: var(--blue-pale);   color: var(--blue);   border-color: #c0d2e8; }
+.tag.purple { background: var(--purple-pale); color: var(--purple); border-color: #d4c4e8; }
+.tag.pink   { background: var(--pink-pale);   color: var(--pink);   border-color: #e8c4d4; }
+.tag .del { font-size: 14px; line-height: 1; opacity: 0.6; }
+
+/* ── Form elements ── */
+.form-group { margin-bottom: 12px; }
+.form-label { font-size: 12px; color: var(--text2); margin-bottom: 5px; display: block; font-weight: 500; }
+.form-input {
+  width: 100%; padding: 10px 12px;
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: var(--radius-sm); color: var(--text); font-size: 14px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.form-input:focus { border-color: var(--accent); background: var(--card); }
+select.form-input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239a8f7e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 18px; border-radius: var(--radius-sm);
+  font-size: 14px; font-weight: 500; transition: all 0.15s;
+}
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:active { background: #4a6a5e; }
+.btn-secondary { background: var(--bg2); color: var(--text2); border: 1px solid var(--border2); }
+.btn-secondary:active { background: var(--border); }
+.btn-danger { background: var(--red-pale); color: var(--red); border: 1px solid #f0c8c4; }
+.btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; }
+.btn-xs { padding: 4px 9px; font-size: 11px; border-radius: 5px; }
+.btn-full { width: 100%; }
+
+/* ── List items ── */
+.list-item {
+  display: flex; align-items: center; padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  gap: 10px; cursor: pointer;
+  transition: background 0.12s;
+}
+.list-item:last-child { border-bottom: none; }
+.list-item:active { background: var(--bg2); }
+
+.avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--accent-pale); display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0; color: var(--accent); font-weight: 600;
+}
+.li-info { flex: 1; min-width: 0; }
+.li-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.li-sub { font-size: 12px; color: var(--text3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.li-right { text-align: right; flex-shrink: 0; }
+.li-amount { font-size: 14px; font-weight: 600; color: var(--accent); }
+.li-date { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+/* ── Pill tabs ── */
+.pill-tabs { display: flex; gap: 6px; padding: 12px 12px 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.pill-tabs::-webkit-scrollbar { display: none; }
+.pill-tab {
+  flex-shrink: 0; padding: 6px 14px; border-radius: 20px;
+  font-size: 13px; font-weight: 500; border: 1px solid var(--border2);
+  background: var(--card); color: var(--text2); transition: all 0.15s;
+}
+.pill-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+/* ── Service items grid ── */
+.service-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.service-item {
+  background: var(--bg2); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 12px;
+  cursor: pointer; transition: all 0.15s; text-align: center;
+}
+.service-item.selected { background: var(--accent-pale); border-color: var(--accent); }
+.service-item .si-icon { font-size: 20px; margin-bottom: 4px; }
+.service-item .si-name { font-size: 13px; font-weight: 500; color: var(--text); }
+
+/* ── Timeline ── */
+.timeline { padding: 0 14px; }
+.tl-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px dashed var(--border); }
+.tl-item:last-child { border-bottom: none; }
+.tl-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; margin-top: 5px; }
+.tl-content { flex: 1; }
+.tl-date { font-size: 11px; color: var(--text3); }
+.tl-text { font-size: 13px; color: var(--text); margin-top: 2px; }
+.tl-detail { font-size: 12px; color: var(--text2); margin-top: 3px; background: var(--bg2); border-radius: 6px; padding: 5px 8px; }
+
+/* ── Toggle switch ── */
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
+.toggle-label { font-size: 13px; color: var(--text); }
+.toggle { position: relative; width: 44px; height: 26px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--border2); border-radius: 26px; transition: 0.2s;
+}
+.toggle-slider::before {
+  position: absolute; content: ""; height: 20px; width: 20px;
+  left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.toggle input:checked + .toggle-slider { background: var(--accent); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+/* ── Reminder item ── */
+.remind-item {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px;
+}
+.remind-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.remind-title { font-size: 13px; font-weight: 600; }
+.remind-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+.remind-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+
+/* ── Cost table ── */
+.cost-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.cost-table th { padding: 8px 10px; text-align: left; font-size: 11px; color: var(--text3); font-weight: 500; border-bottom: 2px solid var(--border2); }
+.cost-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); color: var(--text); }
+.cost-table tr:last-child td { border-bottom: none; }
+.cost-table tr:active td { background: var(--bg2); }
+
+/* ── Chart bar ── */
+.bar-chart { padding: 8px 0; }
+.bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.bar-label { font-size: 12px; color: var(--text2); width: 60px; text-align: right; flex-shrink: 0; }
+.bar-track { flex: 1; height: 10px; background: var(--bg2); border-radius: 5px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 5px; transition: width 0.6s ease; }
+.bar-val { font-size: 12px; color: var(--text2); width: 50px; flex-shrink: 0; }
+
+/* ── Modal overlay ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(30,25,18,0.45);
+  display: none; align-items: flex-end; justify-content: center;
+  z-index: 100; padding: 0;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--card); border-radius: 20px 20px 0 0;
+  width: 100%; max-width: 430px;
+  max-height: 85vh; overflow-y: auto;
+  padding: 0 16px 32px; animation: slideUp 0.25s ease;
+}
+@keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-handle { width: 36px; height: 4px; background: var(--border2); border-radius: 2px; margin: 12px auto 16px; }
+.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+
+/* ── Bottom Tab Bar ── */
+#tab-bar {
+  height: var(--tab-h);
+  background: var(--tab-bg);
+  display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
+  position: relative;
+  box-shadow: 0 -2px 12px rgba(60,50,35,0.15);
+}
+.tab-btn {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; padding-bottom: 2px;
+  color: var(--tab-inactive);
+  transition: color 0.15s;
+  position: relative;
+}
+.tab-btn.active { color: var(--tab-active); }
+.tab-btn.active::after {
+  content: ''; position: absolute; top: 0; left: 20%; right: 20%;
+  height: 2px; background: white; border-radius: 0 0 2px 2px;
+}
+.tab-btn .tab-icon { font-size: 22px; line-height: 1; }
+.tab-btn .tab-label { font-size: 10px; font-weight: 500; letter-spacing: 0.3px; }
+
+/* ── Empty state ── */
+.empty { text-align: center; padding: 40px 20px; color: var(--text3); }
+.empty .empty-icon { font-size: 40px; margin-bottom: 10px; }
+.empty p { font-size: 13px; }
+
+/* ── Divider ── */
+.divider-line { height: 1px; background: var(--border); margin: 8px 0; }
+
+/* ── Search bar ── */
+.search-bar {
+  margin: 10px 12px 0; display: flex; gap: 8px; align-items: center;
+  background: var(--card); border: 1px solid var(--border2); border-radius: 10px;
+  padding: 8px 12px;
+}
+.search-bar input { flex: 1; background: none; border: none; font-size: 14px; color: var(--text); }
+.search-bar input::placeholder { color: var(--text3); }
+.search-icon { color: var(--text3); font-size: 16px; }
+
+/* ── Inline photo upload ── */
+.photo-upload-area {
+  border: 2px dashed var(--border2); border-radius: var(--radius-sm);
+  padding: 20px; text-align: center; color: var(--text3);
+  background: var(--bg2); cursor: pointer;
+}
+.photo-upload-area:hover { border-color: var(--accent); color: var(--accent); }
+.photo-thumb-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.photo-thumb {
+  width: 72px; height: 72px; border-radius: 8px; object-fit: cover;
+  border: 1px solid var(--border); background: var(--bg2);
+  display: flex; align-items: center; justify-content: center; font-size: 24px;
+}
+
+/* ── Pill amount ── */
+.amount-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: var(--accent); background: var(--accent-pale); border-radius: 10px; padding: 2px 10px; }
+
+/* ── Coupon item ── */
+.coupon { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; }
+.coupon-name { font-size: 13px; font-weight: 500; }
+.coupon-status { font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+.coupon-status.used { background: var(--bg2); color: var(--text3); }
+.coupon-status.active { background: var(--accent-pale); color: var(--accent); }
+
+/* ── Location badge ── */
+.loc-badge { font-size: 11px; padding: 2px 8px; border-radius: 5px; font-weight: 500; }
+.loc-tc { background: #e8f0ec; color: #3d6b5e; }
+.loc-tp { background: #e8eef4; color: #3d5a7a; }
+
+/* ── Utility ── */
+.mt4 { margin-top: 4px; }
+.mt8 { margin-top: 8px; }
+.mt12 { margin-top: 12px; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; }
+.text-accent { color: var(--accent); }
+.text-muted { color: var(--text3); font-size: 12px; }
+.fw6 { font-weight: 600; }
+.fs12 { font-size: 12px; }
+.fs13 { font-size: 13px; }
+.fs14 { font-size: 14px; }
+.gap6 { gap: 6px; }
+.px12 { padding-left: 12px; padding-right: 12px; }
+
+/* ── Note floating hint ── */
+.note-wrap { position: relative; }
+.note-hint {
+  position: absolute; top: 10px; left: 12px; right: 12px;
+  font-size: 12px; color: var(--text3); pointer-events: none;
+  line-height: 1.6; transition: opacity 0.2s;
+}
+textarea.form-input { background: transparent; position: relative; z-index: 1; }
+textarea.form-input.has-value + .note-hint { opacity: 0; }
+/* hint stays visible while empty, fades when has value */
+
+/* ── Safe area (iPhone notch) ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  #tab-bar { padding-bottom: env(safe-area-inset-bottom); height: calc(var(--tab-h) + env(safe-area-inset-bottom)); }
+}
+
+/* ── UNIFIED SPACING SYSTEM ── */
+/* Standard section header: same as client-list top gap */
+.sec-head {
+  padding: 14px 16px 6px !important;
+  display: flex; align-items: center; justify-content: space-between;
+}
+/* Standard card margin below each section */
+.card { margin: 0 12px 0; }
+.stats-row { padding: 0 12px; gap: 8px; }
+/* Topic gap between major sections = 24px (twice the ~12px card-to-title gap) */
+.topic-gap { height: 24px; }     /* 1× base: between sub-topics */
+.topic-gap-lg { height: 48px; }  /* 2× base: between major sections */
+.topic-gap-sm { height: 8px; }   /* half: tight spacing */
+
+/* ── Sort buttons ── */
+.sort-btn-row { display:flex; gap:6px; padding: 6px 0 10px; flex-wrap:wrap; }
+.sort-btn {
+  padding: 5px 12px; border-radius: 16px; font-size: 11px; font-weight:600;
+  border: 1px solid var(--border2); background: var(--card); color: var(--text2);
+  cursor: pointer; transition: all 0.15s;
+}
+.sort-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+/* ── LINE button in client row ── */
+.line-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #06C755; color: white; font-size: 14px;
+  text-decoration: none; flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(6,199,85,0.3);
+}
+
+/* ── High value 2-col grid ── */
+.hv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.hv-item {
+  display: flex; align-items: center; gap: 5px;
+  padding: 6px 8px; border-radius: 8px;
+  background: var(--accent-pale); cursor: pointer;
+  border: 1px solid #c2d9d3;
+}
+.hv-item:active { background: #d0e8e2; }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ── HEADER ── -->
+  <div class="app-header">
+    <div class="logo">✦</div>
+    <div>
+      <div class="title">盼盼睫研</div>
+      <div class="subtitle">Panpan Eyelash Studio Manager</div>
+    </div>
+    <div class="header-right" id="header-actions">
+      <button class="icon-btn" onclick="openModal('modal-add-client')">＋</button>
+    </div>
+    <span id="user-badge" style="font-size:11px;color:var(--tab-inactive);max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:6px"></span>
+    <button class="icon-btn" onclick="signOut()" title="登出" style="font-size:15px;margin-left:2px">⏏</button>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       PAGES
+  ══════════════════════════════════════ -->
+  <div class="page-content">
+
+    <!-- ▶ PAGE 1：客戶資料 -->
+    <div class="page active" id="page-client">
+
+      <!-- 搜尋列（最上方） -->
+      <div class="search-bar" style="margin:10px 12px 0">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="client-search" placeholder="搜尋姓名・綽號・標籤…" oninput="doSearch(this.value)">
+      </div>
+
+      <!-- 摘要 -->
+      <div class="sec-head"><span class="sec-title">摘要</span></div>
+      <div class="stats-row">
+        <div class="stat-card" style="cursor:pointer" onclick="openSummaryModal('month_rec')">
+          <div class="stat-label">本月施作</div>
+          <div class="stat-value" id="stat-month-count">—</div>
+          <div class="stat-sub" style="color:var(--accent)">筆紀錄 ›</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer" onclick="openSummaryModal('month_new')">
+          <div class="stat-label">本月新客</div>
+          <div class="stat-value" id="stat-month-new">—</div>
+          <div class="stat-sub" style="color:var(--accent)">首次消費 ›</div>
+        </div>
+      </div>
+      <div class="stats-row" style="margin-top:6px">
+        <div class="stat-card" style="cursor:pointer" onclick="openSummaryModal('year_rec')">
+          <div class="stat-label">本年施作</div>
+          <div class="stat-value" id="stat-year-rec">—</div>
+          <div class="stat-sub" style="color:var(--accent)">筆紀錄 ›</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer" onclick="openSummaryModal('all_client')">
+          <div class="stat-label">總客戶數</div>
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-sub" id="stat-tc">— ›</div>
+        </div>
+      </div>
+
+      <!-- 客戶列表標題 -->
+      <div class="topic-gap"></div>
+      <div class="sec-head" style="padding-bottom:4px">
+        <span class="sec-title">客戶列表</span>
+        <span class="sec-action" id="client-count">載入中…</span>
+      </div>
+      <!-- 快速篩選：第一行 睫毛/眉毛/霧唇/髮際線，第二行 除色/全部 -->
+      <div class="pill-tabs" style="padding:4px 12px 0;flex-wrap:wrap">
+        <button class="pill-tab filter-pill" onclick="setFilter(this,'睫毛')">👀 睫毛</button>
+        <button class="pill-tab filter-pill" onclick="setFilter(this,'眉毛')">👑 眉毛</button>
+        <button class="pill-tab filter-pill" onclick="setFilter(this,'霧唇')">👄 霧唇</button>
+        <button class="pill-tab filter-pill" onclick="setFilter(this,'髮際線')">🎶 髮際線</button>
+      </div>
+      <div class="pill-tabs" style="padding:4px 12px 8px;flex-wrap:wrap">
+        <button class="pill-tab filter-pill" onclick="setFilter(this,'除色')">🪄 除色</button>
+        <button class="pill-tab filter-pill active" onclick="setFilter(this,'全部')">💰 全部</button>
+      </div>
+      <div class="card" id="client-list"></div>
+
+      <div class="topic-gap-lg"></div>
+      <!-- 標籤資料庫 -->
+      <div class="sec-head">
+        <span class="sec-title">🏷 標籤資料庫</span>
+        <span class="sec-action" id="tag-bank-count"></span>
+      </div>
+      <div class="card" style="margin-bottom:0">
+        <div class="card-body">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:8px;line-height:1.5">
+            最多 50 個標籤・已被使用的標籤無法刪除・點選標籤可複製至客戶資料
+          </div>
+          <div id="tag-bank-list" style="display:flex;flex-wrap:wrap;gap:6px;min-height:32px"></div>
+          <div style="display:flex;gap:6px;margin-top:10px">
+            <input class="form-input" id="tag-bank-input" placeholder="新增標籤名稱…" style="flex:1;font-size:13px" maxlength="20">
+            <button class="btn btn-primary btn-xs" onclick="addTagToBank()">＋ 新增</button>
+          </div>
+          <div id="tag-bank-err" style="color:var(--red);font-size:12px;margin-top:4px;display:none"></div>
+        </div>
+      </div>
+      <div style="height:16px"></div>
+    </div>
+    <!-- ▶ END PAGE 1 -->
+
+    <!-- ▶ PAGE 2：提醒 -->
+    <div class="page" id="page-remind">
+
+      <!-- ① 本日 / 本週提醒總覽 -->
+      <div class="sec-head"><span class="sec-title">📅 本日提醒</span><span class="sec-action" id="remind-today-date"></span></div>
+      <div id="remind-today-list" class="px12"></div>
+
+      <div class="topic-gap"></div>
+      <div class="sec-head"><span class="sec-title">📆 本週提醒</span></div>
+      <div id="remind-week-list" class="px12"></div>
+
+      <div class="topic-gap"></div>
+      <!-- ② 未完成提醒 -->
+      <div class="sec-head">
+        <span class="sec-title" style="color:var(--red)">⚠️ 未完成提醒</span>
+        <span class="sec-action" id="remind-pending-count"></span>
+      </div>
+      <div id="remind-pending-list" class="px12"></div>
+
+      <div class="topic-gap"></div>
+      <!-- ③ 本月提醒 -->
+      <div class="sec-head"><span class="sec-title">🗓 本月提醒</span></div>
+      <div id="remind-month-list" class="px12"></div>
+
+      <div class="topic-gap" style="height:32px"></div>
+
+      <!-- ── 回訪提醒設定 ── -->
+      <div class="sec-head"><span class="sec-title">⚙️ 回訪提醒天數設定</span></div>
+      <div class="px12">
+        <div style="background:var(--amber-pale);border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:var(--amber)">
+          ✏️ 調整天數後按「儲存設定」，提醒名單將自動重新計算
+        </div>
+
+        <!-- 睫毛 -->
+        <div class="card" style="margin:0 0 10px">
+          <div class="card-header" style="background:var(--accent-pale)">
+            <span style="font-size:16px">👀</span>
+            <span class="card-title text-accent">睫毛</span>
+          </div>
+          <div class="card-body">
+            <div class="form-group"><label class="form-label">第一次關心（天）</label>
+              <input class="form-input" type="number" id="cfg-lash-1" value="5" min="1"></div>
+            <div class="form-group"><label class="form-label">三週回補提醒（天）</label>
+              <input class="form-input" type="number" id="cfg-lash-2" value="17" min="1"></div>
+            <div class="form-group" style="margin-bottom:0"><label class="form-label">長期回訪詢問（月）</label>
+              <input class="form-input" type="number" id="cfg-lash-3" value="3" min="1"></div>
+          </div>
+        </div>
+
+        <!-- 眉毛 -->
+        <div class="card" style="margin:0 0 10px">
+          <div class="card-header" style="background:var(--purple-pale)">
+            <span style="font-size:16px">👑</span>
+            <span class="card-title" style="color:var(--purple)">眉毛</span>
+          </div>
+          <div class="card-body">
+            <div class="form-group"><label class="form-label">第一次關心（天）</label>
+              <input class="form-input" type="number" id="cfg-brow-1" value="14" min="1"></div>
+            <div class="form-group"><label class="form-label">照片回傳（天）</label>
+              <input class="form-input" type="number" id="cfg-brow-2" value="30" min="1"></div>
+            <div class="form-group"><label class="form-label">回補提醒（月）</label>
+              <input class="form-input" type="number" id="cfg-brow-3" value="3" min="1"></div>
+            <div class="form-group" style="margin-bottom:0"><label class="form-label">長期回補詢問（月）</label>
+              <input class="form-input" type="number" id="cfg-brow-4" value="10" min="1"></div>
+          </div>
+        </div>
+
+        <!-- 霧唇 / 髮際線 -->
+        <div class="card" style="margin:0 0 10px">
+          <div class="card-header" style="background:var(--pink-pale)">
+            <span style="font-size:16px">👄</span>
+            <span class="card-title" style="color:var(--pink)">霧唇 ／ 髮際線</span>
+          </div>
+          <div class="card-body">
+            <div class="form-group"><label class="form-label">照片回傳①（天）</label>
+              <input class="form-input" type="number" id="cfg-lip-1" value="2" min="1"></div>
+            <div class="form-group"><label class="form-label">照片回傳②（天）</label>
+              <input class="form-input" type="number" id="cfg-lip-2" value="4" min="1"></div>
+            <div class="form-group"><label class="form-label">照片回傳③（天）</label>
+              <input class="form-input" type="number" id="cfg-lip-3" value="8" min="1"></div>
+            <div class="form-group"><label class="form-label">照片回傳④（天）</label>
+              <input class="form-input" type="number" id="cfg-lip-4" value="10" min="1"></div>
+            <div class="form-group"><label class="form-label">回補提醒（月）</label>
+              <input class="form-input" type="number" id="cfg-lip-5" value="3" min="1"></div>
+            <div class="form-group" style="margin-bottom:0"><label class="form-label">長期回補詢問（月）</label>
+              <input class="form-input" type="number" id="cfg-lip-6" value="10" min="1"></div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-full" onclick="saveReminderConfig()">💾 儲存設定並重新計算</button>
+        <div style="height:16px"></div>
+      </div>
+    </div>
+    <!-- ▶ END PAGE 2 -->
+
+
+
+    <!-- ▶ PAGE 3：預約 -->
+    <div class="page" id="page-booking">
+
+      <div class="sec-head"><span class="sec-title">預約總覽</span></div>
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">本週預約</div>
+          <div class="stat-value">4</div>
+          <div class="stat-sub">台中 3・台北 1</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">今日</div>
+          <div class="stat-value">2</div>
+          <div class="stat-sub">下午 2:00 / 5:00</div>
+        </div>
+      </div>
+
+      <div class="topic-gap"></div>
+      <!-- 今日行程 -->
+      <div class="sec-head"><span class="sec-title">今日行程</span><span class="sec-action">5月12日</span></div>
+      <div class="card">
+        <div class="list-item">
+          <div style="text-align:center; width:42px; flex-shrink:0">
+            <div style="font-size:13px;font-weight:700;color:var(--accent)">14:00</div>
+            <div style="font-size:10px;color:var(--text3)">90 min</div>
+          </div>
+          <div class="li-info">
+            <div class="li-name">小美</div>
+            <div class="li-sub">👀 睫毛嫁接 · 台中</div>
+          </div>
+          <span class="tag green">確認</span>
+        </div>
+        <div class="list-item">
+          <div style="text-align:center; width:42px; flex-shrink:0">
+            <div style="font-size:13px;font-weight:700;color:var(--accent)">17:00</div>
+            <div style="font-size:10px;color:var(--text3)">120 min</div>
+          </div>
+          <div class="li-info">
+            <div class="li-name">佳琪</div>
+            <div class="li-sub">👄 霧唇 · 台北</div>
+          </div>
+          <span class="tag amber">待確認</span>
+        </div>
+      </div>
+
+      <!-- 預約連結說明 -->
+      <div class="sec-head"><span class="sec-title">外部連結整合</span></div>
+      <div class="card">
+        <div class="card-body">
+          <div class="toggle-row">
+            <div>
+              <div class="fs13 fw6">🗓 TimeTree 行事曆</div>
+              <div class="text-muted mt4">手動同步至 TimeTree 共享日曆</div>
+            </div>
+            <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="divider-line"></div>
+          <div class="toggle-row">
+            <div>
+              <div class="fs13 fw6">💬 LINE 官方帳號</div>
+              <div class="text-muted mt4">發送提醒與確認訊息至客戶 LINE</div>
+            </div>
+            <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="divider-line"></div>
+          <div style="background:var(--amber-pale);border-radius:8px;padding:10px 12px;margin-top:8px;">
+            <div class="fs12 fw6" style="color:var(--amber)">📌 自動接單功能</div>
+            <div class="text-muted mt4">目前使用人工確認預約模式。日後可開啟 24h 自動接單功能。</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic-gap"></div>
+      <!-- 新增預約 -->
+      <div class="px12 mt8">
+        <button class="btn btn-primary btn-full" onclick="openModal('modal-add-booking')">＋ 新增手動預約</button>
+      </div>
+      <div style="height:12px"></div>
+    </div>
+    <!-- ▶ END PAGE 3 -->
+
+    <!-- ▶ PAGE 4：收支紀錄 -->
+    <div class="page" id="page-cost">
+
+      <!-- 月份選擇器 -->
+      <div class="sec-head">
+        <span class="sec-title">收支紀錄</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <button onclick="costPrevMonth()" style="width:28px;height:28px;border-radius:50%;background:var(--bg2);border:1px solid var(--border);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>
+          <span id="cost-month-label" style="font-size:13px;font-weight:600;color:var(--accent);min-width:64px;text-align:center"></span>
+          <button onclick="costNextMonth()" style="width:28px;height:28px;border-radius:50%;background:var(--bg2);border:1px solid var(--border);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">›</button>
+        </div>
+      </div>
+      <!-- 收入摘要（可點進） -->
+      <div class="stats-row" id="cost-income-summary" style="cursor:pointer" onclick="openCostSummaryDetail()"></div>
+
+      <div class="topic-gap"></div>
+      <!-- 服務項目收入 -->
+      <div class="sec-head"><span class="sec-title">服務項目收入</span></div>
+      <div class="pill-tabs" id="cost-income-tabs">
+        <button class="pill-tab active" onclick="switchCostSvc(this,'睫毛')">👀 睫毛</button>
+        <button class="pill-tab" onclick="switchCostSvc(this,'眉毛')">👑 眉毛</button>
+        <button class="pill-tab" onclick="switchCostSvc(this,'霧唇')">👄 霧唇</button>
+        <button class="pill-tab" onclick="switchCostSvc(this,'髮際線')">🎶 髮際線</button>
+        <button class="pill-tab" onclick="switchCostSvc(this,'除色')">🪄 除色</button>
+      </div>
+      <div id="cost-income-body"></div>
+
+      <div class="topic-gap-lg"></div>
+      <!-- 支出成本 -->
+      <div class="sec-head"><span class="sec-title">支出成本</span></div>
+      <div class="pill-tabs" id="cost-expense-tabs">
+        <button class="pill-tab active" onclick="switchExpenseSvc(this,'睫毛')">👀 睫毛</button>
+        <button class="pill-tab" onclick="switchExpenseSvc(this,'眉唇髮')">✏️💋💜 眉唇髮</button>
+        <button class="pill-tab" onclick="switchExpenseSvc(this,'除色')">🪄 除色</button>
+      </div>
+      <div id="cost-expense-body"></div>
+
+      <div style="height:16px"></div>
+    </div>
+    <!-- ▶ END PAGE 4 -->
+
+    <!-- ▶ PAGE 5：統計 -->
+    <div class="page" id="page-stats">
+
+      <!-- 月份選擇器 -->
+      <div style="display:flex;align-items:center;gap:8px;padding:12px 12px 0">
+        <button onclick="statPrevMonth()" style="background:var(--card);border:1px solid var(--border2);border-radius:8px;width:34px;height:34px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>
+        <div style="flex:1;text-align:center;font-size:15px;font-weight:600;color:var(--text)" id="stat-month-label">—</div>
+        <button onclick="statNextMonth()" style="background:var(--card);border:1px solid var(--border2);border-radius:8px;width:34px;height:34px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">›</button>
+      </div>
+
+      <!-- ① 本月摘要 -->
+      <div class="sec-head"><span class="sec-title">① 本月摘要</span></div>
+      <div class="stats-row" id="stat-month-top"></div>
+      <div id="stat-month-body"></div>
+
+      <div class="topic-gap-lg"></div>
+      <!-- ② 本年摘要 -->
+      <div class="sec-head"><span class="sec-title">② 本年摘要</span></div>
+      <div class="stats-row" id="stat-year-top"></div>
+      <div id="stat-year-body"></div>
+
+      <div id="stat-highval-body"></div>
+
+      <div class="topic-gap-lg"></div>
+      <!-- ③ 客戶服務項目統計 -->
+      <div class="sec-head"><span class="sec-title">③ 客戶服務項目統計</span></div>
+      <div id="stat-svc-cross"></div>
+
+      <div class="topic-gap-lg"></div>
+      <!-- ④ 全部總覽 -->
+      <div class="sec-head"><span class="sec-title">④ 全部總覽</span></div>
+      <div class="stats-row" id="stat-all-top"></div>
+      <div id="stat-all-body"></div>
+
+      <div class="topic-gap-lg"></div>
+      <!-- ④ 自訂區間分析 -->
+      <div class="sec-head"><span class="sec-title">📐 自訂區間分析</span></div>
+      <div class="card">
+        <div class="card-body">
+          <!-- Mode toggle -->
+          <div style="display:flex;gap:6px;margin-bottom:12px">
+            <button id="range-mode-month" class="sort-btn active" onclick="setRangeMode('month')">月份區間</button>
+            <button id="range-mode-year" class="sort-btn" onclick="setRangeMode('year')">整年查詢</button>
+          </div>
+          <!-- Month range -->
+          <div id="range-month-inputs">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+              <div>
+                <div style="font-size:11px;color:var(--text3);margin-bottom:4px">開始年月</div>
+                <input class="form-input" type="month" id="range-start" style="font-size:13px">
+              </div>
+              <div>
+                <div style="font-size:11px;color:var(--text3);margin-bottom:4px">結束年月</div>
+                <input class="form-input" type="month" id="range-end" style="font-size:13px">
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+              <div>
+                <div style="font-size:11px;color:var(--text3);margin-bottom:4px">— 或選整年範圍 —</div>
+                <select class="form-input" id="range-year-from" style="font-size:13px" onchange="setYearRange()"></select>
+              </div>
+              <div>
+                <div style="font-size:11px;color:var(--text3);margin-bottom:4px">到</div>
+                <select class="form-input" id="range-year-to" style="font-size:13px" onchange="setYearRange()"></select>
+              </div>
+            </div>
+          </div>
+          <!-- Year range -->
+          <div id="range-year-inputs" style="display:none;margin-bottom:10px">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px">選擇年份</div>
+            <select class="form-input" id="range-year-select" style="font-size:13px">
+            </select>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="renderRangeAnalysis()">📊 計算報表</button>
+          <div id="range-result" style="margin-top:12px"></div>
+        </div>
+      </div>
+      <div style="height:24px"></div>
+    </div>
+    <!-- ▶ END PAGE 5 -->
+
+
+
+  </div>
+  <!-- END page-content -->
+
+  <!-- ══════════════════════════════════════
+       BOTTOM TAB BAR
+  ══════════════════════════════════════ -->
+  <div id="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('client',this)">
+      <span class="tab-icon">👤</span>
+      <span class="tab-label">客戶資料</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('remind',this)">
+      <span class="tab-icon">🔔</span>
+      <span class="tab-label">提醒</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('booking',this)">
+      <span class="tab-icon">📅</span>
+      <span class="tab-label">預約</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('cost',this)">
+      <span class="tab-icon">💰</span>
+      <span class="tab-label">收支</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('stats',this)">
+      <span class="tab-icon">📊</span>
+      <span class="tab-label">統計</span>
+    </button>
+  </div>
+
+</div><!-- end #app -->
+
+
+<!-- ══════════════════════════════════════
+     MODALS
+══════════════════════════════════════ -->
+
+<!-- 客戶詳細資料 Modal -->
+<div class="modal-overlay" id="modal-client-detail" onclick="closeModalOutside(event,'modal-client-detail')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="flex-between">
+      <div class="modal-title">客戶資料</div>
+      <button class="btn btn-secondary btn-xs" onclick="closeModal('modal-client-detail')">關閉</button>
+    </div>
+
+    <!-- Tab 切換 -->
+    <div class="pill-tabs" style="padding:0 0 12px;margin:0 -4px">
+      <button class="pill-tab active" onclick="switchDetailTab(this,'dt-basic')">基本</button>
+      <button class="pill-tab" onclick="switchDetailTab(this,'dt-record')">施作紀錄</button>
+      <button class="pill-tab" onclick="switchDetailTab(this,'dt-coupon')">優惠</button>
+      <button class="pill-tab" onclick="switchDetailTab(this,'dt-photo')">照片</button>
+      <button class="pill-tab" onclick="switchDetailTab(this,'dt-consent')">同意書</button>
+    </div>
+
+    <!-- 基本資料 -->
+    <div id="dt-basic">
+      <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:8px">
+        <div class="form-group">
+          <label class="form-label">姓名 *</label>
+          <input class="form-input" id="ed-name" placeholder="姓名">
+          <div id="ed-name-err" style="color:var(--red);font-size:12px;margin-top:4px;display:none">⚠ 姓名不可空白</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">綽號</label>
+          <input class="form-input" id="ed-nickname" placeholder="如：小米">
+        </div>
+      </div>
+
+      <!-- 性別 年紀 生日 同行 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="form-group">
+          <label class="form-label">性別</label>
+          <select class="form-input" id="ed-gender"><option>女</option><option>男</option><option>其他</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">年紀</label>
+          <select class="form-input" id="ed-age">
+            <option value="">選擇年紀</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">🎂 生日</label>
+        <input class="form-input" id="ed-birthday" type="date" oninput="calcAgeFromBirthday('ed')">
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">填寫後自動加入生日當月提醒</div>
+      </div>
+
+      <!-- 電話 + 國外客戶 -->
+      <div class="form-group">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+          <label class="form-label" style="margin:0">電話 *</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2);cursor:pointer">
+            <input type="checkbox" id="ed-overseas" onchange="toggleOverseasEdit()" style="accent-color:var(--accent)">
+            🌏 國外客戶（免填電話）
+          </label>
+        </div>
+        <input class="form-input" id="ed-phone" type="tel" placeholder="09xx-xxx-xxx（10位數）" oninput="fmtPhone(this)" maxlength="13">
+        <div id="ed-phone-err" style="color:var(--red);font-size:12px;margin-top:4px;display:none">⚠ 需09開頭共10位數，或勾選「國外客戶」</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="form-group">
+          <label class="form-label">施作地點</label>
+          <select class="form-input" id="ed-location"><option>台中</option><option>台北</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">來源</label>
+          <select class="form-input" id="ed-source" onchange="handleSourceChange(this,'ed-source-custom')">
+            <option>客戶介紹</option><option>KOL分享</option><option>Google</option><option>Instagram</option>
+            <option id="ed-src-custom-opt">其他</option>
+          </select>
+          <input class="form-input" id="ed-source-custom" placeholder="請輸入來源…" style="display:none;margin-top:6px" onblur="saveCustomSource('ed-source','ed-source-custom')">
+        </div>
+      </div>
+      <!-- LINE 官方聊天連結 -->
+      <div class="form-group">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+          <label class="form-label" style="margin:0">💬 官方 LINE 聊天連結</label>
+          <a id="ed-line-btn" href="#" target="_blank" onclick="openLineChat(event,'ed')" style="display:none;background:var(--accent);color:white;font-size:11px;font-weight:600;padding:5px 12px;border-radius:16px;text-decoration:none">💬 開啟聊天</a>
+        </div>
+        <input class="form-input" id="ed-line-url" placeholder="貼上 LINE 聊天連結… (https://line.me/…)" oninput="updateLineBtn('ed')">
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">儲存後可從客戶列表直接開啟 LINE 對話</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">人物備註</label>
+        <div class="note-wrap">
+          <textarea class="form-input" id="ed-note" rows="3" oninput="noteInput(this)" style="color:var(--text);background:var(--bg2);border:1px solid var(--border2);border-radius:8px;width:100%;padding:10px 12px;resize:none;"></textarea>
+          <div class="note-hint" id="ed-note-hint" style="opacity:1">家庭・另一伴・工作・生活城市<br>個性・我們聊什麼</div>
+        </div>
+      </div>
+
+      <!-- 已施作項目：點已施作可查看/編輯，點未施作可新增 -->
+      <div class="form-group">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <label class="form-label" style="margin:0">已施作項目</label>
+          <span style="font-size:11px;color:var(--text3)">點選可新增/編輯紀錄</span>
+        </div>
+        <div class="service-grid mt4" id="ed-services">
+          <div class="service-item" data-svc="睫毛" onclick="jumpToRecordBySvc('睫毛')"><div class="si-icon">😴</div><div class="si-name">睫毛</div></div>
+          <div class="service-item" data-svc="眉毛" onclick="jumpToRecordBySvc('眉毛')"><div class="si-icon">✏️</div><div class="si-name">眉毛</div></div>
+          <div class="service-item" data-svc="霧唇" onclick="jumpToRecordBySvc('霧唇')"><div class="si-icon">💋</div><div class="si-name">霧唇</div></div>
+          <div class="service-item" data-svc="髮際線" onclick="jumpToRecordBySvc('髮際線')"><div class="si-icon">💜</div><div class="si-name">髮際線</div></div>
+          <div class="service-item" data-svc="除色" onclick="jumpToRecordBySvc('除色')" style="grid-column:span 2"><div class="si-icon">🗑</div><div class="si-name">除色</div></div>
+        </div>
+      </div>
+
+      <!-- 個人標籤 -->
+      <div class="form-group">
+        <label class="form-label">個人標籤</label>
+        <div class="tag-row" id="tag-container" style="min-height:28px;margin-bottom:6px"></div>
+        <!-- 從標籤庫選入 -->
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px">從標籤庫選入：</div>
+        <div id="tag-bank-picker" style="display:flex;flex-wrap:wrap;gap:5px;min-height:24px;margin-bottom:8px"></div>
+        <!-- 手動輸入 -->
+        <div style="display:flex;gap:6px">
+          <input class="form-input" id="new-tag-input" placeholder="手動輸入新標籤…" style="flex:1;font-size:13px">
+          <button class="btn btn-secondary btn-xs" onclick="addTag()">＋</button>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="saveClientEdits()">儲存資料</button>
+    </div>
+
+    <!-- 施作紀錄 (動態渲染) -->
+    <div id="dt-record" style="display:none">
+      <div style="color:var(--text3);font-size:12px;text-align:center;padding:20px">載入中…</div>
+    </div>
+
+    <!-- 使用優惠 (動態渲染) -->
+    <div id="dt-coupon" style="display:none">
+      <div id="coupon-list-container"></div>
+      <button class="btn btn-primary btn-full" style="margin-top:8px" onclick="openAddCoupon()">＋ 新增優惠</button>
+    </div>
+
+    <!-- 施作照片 -->
+    <div id="dt-photo" style="display:none">
+      <div class="photo-thumb-row">
+        <div class="photo-thumb">📷</div>
+        <div class="photo-thumb">📷</div>
+        <div class="photo-thumb">📷</div>
+      </div>
+      <div class="photo-upload-area mt8">
+        <input type="file" accept="image/*" multiple style="display:none" id="photo-upload">
+        <div onclick="document.getElementById('photo-upload').click()">
+          <div style="font-size:28px;margin-bottom:6px">📸</div>
+          <div class="fs13">點擊上傳施作照片</div>
+          <div class="text-muted mt4">支援 JPG・PNG・HEIC</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 同意書 -->
+    <div id="dt-consent" style="display:none">
+      <div class="fs13 fw6" style="margin-bottom:12px">施作前同意書 ／ 問卷連結</div>
+      <div class="remind-item">
+        <div class="remind-header">
+          <span class="remind-title">😴 睫毛同意書</span>
+          <span class="remind-badge" style="background:var(--accent-pale);color:var(--accent)">已簽署</span>
+        </div>
+        <a href="#" style="font-size:12px;color:var(--accent)">📋 Google 表單連結 →</a>
+      </div>
+      <div class="remind-item">
+        <div class="remind-header">
+          <span class="remind-title">✏️ 眉毛同意書</span>
+          <span class="remind-badge" style="background:var(--border);color:var(--text3)">未簽署</span>
+        </div>
+        <a href="#" style="font-size:12px;color:var(--accent)">📋 Google 表單連結 →</a>
+      </div>
+      <div class="remind-item">
+        <div class="remind-header">
+          <span class="remind-title">💋 霧唇同意書</span>
+          <span class="remind-badge" style="background:var(--border);color:var(--text3)">未簽署</span>
+        </div>
+        <a href="#" style="font-size:12px;color:var(--accent)">📋 Google 表單連結 →</a>
+      </div>
+      <div class="remind-item">
+        <div class="remind-header">
+          <span class="remind-title">💜 髮際線同意書</span>
+          <span class="remind-badge" style="background:var(--border);color:var(--text3)">未簽署</span>
+        </div>
+        <a href="#" style="font-size:12px;color:var(--accent)">📋 Google 表單連結 →</a>
+      </div>
+      <div style="background:var(--bg2);border-radius:8px;padding:10px 12px;margin-top:8px;">
+        <div class="fs12 fw6" style="color:var(--text2)">📌 設定方式</div>
+        <div class="text-muted mt4">前往「設定 → 同意書連結」貼入各項目的 Google 表單網址，系統將自動帶入此處供客戶點選填寫。</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 新增施作紀錄 Modal -->
+<div class="modal-overlay" id="modal-add-record" onclick="closeModalOutside(event,'modal-add-record')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">新增施作紀錄</div>
+    <div class="form-group">
+      <label class="form-label">施作項目 *</label>
+      <div class="service-grid" id="rec-service-grid">
+        <div class="service-item rec-svc-btn" data-svc="睫毛" onclick="selectRecSvc(this)"><div class="si-icon">😴</div><div class="si-name">睫毛</div></div>
+        <div class="service-item rec-svc-btn" data-svc="眉毛" onclick="selectRecSvc(this)"><div class="si-icon">✏️</div><div class="si-name">眉毛</div></div>
+        <div class="service-item rec-svc-btn" data-svc="霧唇" onclick="selectRecSvc(this)"><div class="si-icon">💋</div><div class="si-name">霧唇</div></div>
+        <div class="service-item rec-svc-btn" data-svc="髮際線" onclick="selectRecSvc(this)"><div class="si-icon">💜</div><div class="si-name">髮際線</div></div>
+        <div class="service-item rec-svc-btn" data-svc="除色" onclick="selectRecSvc(this)" style="grid-column:span 2"><div class="si-icon">🗑</div><div class="si-name">除色</div></div>
+      </div>
+      <div id="rec-svc-err" style="color:var(--red);font-size:12px;margin-top:6px;display:none">請選擇施作項目</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">施作日期 *</label>
+      <input class="form-input" id="rec-date" type="date">
+      <div id="rec-date-err" style="color:var(--red);font-size:12px;margin-top:4px;display:none">請選擇日期</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="form-group">
+        <label class="form-label">針具規格</label>
+        <input class="form-input" id="rec-needle" placeholder="12mm 0.10J">
+      </div>
+      <div class="form-group">
+        <label class="form-label">色號</label>
+        <input class="form-input" id="rec-color" placeholder="深棕">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">消費金額 (NT$) *</label>
+      <input class="form-input" id="rec-amount" type="number" placeholder="3800" min="0">
+      <div id="rec-amount-err" style="color:var(--red);font-size:12px;margin-top:4px;display:none">請填寫金額</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">施作備註</label>
+      <textarea class="form-input" id="rec-note" rows="2" placeholder="注意事項・特殊情況…"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">新增客戶標籤（可選）</label>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:5px">常用標籤快選：</div>
+      <div id="rec-tag-suggestions" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;min-height:20px"></div>
+      <div class="tag-row" id="rec-tag-container" style="min-height:24px;flex-wrap:wrap;margin-bottom:6px"></div>
+      <div style="display:flex;gap:6px">
+        <input class="form-input" id="rec-tag-input" placeholder="手動輸入標籤…" style="flex:1;font-size:13px">
+        <button class="btn btn-secondary btn-xs" onclick="addRecTag()">＋</button>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">標籤將同步至客戶資料</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeModal('modal-add-record')">取消</button>
+      <button class="btn btn-primary" style="flex:2" onclick="saveRecord()">儲存紀錄</button>
+    </div>
+  </div>
+</div>
+
+<!-- 新增客戶 Modal -->
+<div class="modal-overlay" id="modal-add-client" onclick="closeModalOutside(event,'modal-add-client')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">新增客戶</div>
+    <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:8px">
+      <div class="form-group"><label class="form-label">姓名 *</label><input class="form-input" id="nc-name" placeholder="客戶姓名"></div>
+      <div class="form-group"><label class="form-label">綽號</label><input class="form-input" id="nc-nickname" placeholder="如：小米"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="form-group"><label class="form-label">性別</label><select class="form-input" id="nc-gender"><option>女</option><option>男</option><option>其他</option></select></div>
+      <div class="form-group"><label class="form-label">年紀</label>
+        <select class="form-input" id="nc-age">
+          <option value="">選擇年紀</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">🎂 生日</label>
+      <input class="form-input" id="nc-birthday" type="date" oninput="calcAgeFromBirthday('nc')">
+    </div>
+    <div class="form-group">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+        <label class="form-label" style="margin:0">電話 *</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2);cursor:pointer">
+          <input type="checkbox" id="nc-overseas" onchange="toggleOverseasNew()" style="accent-color:var(--accent)">
+          🌏 國外客戶（免填電話）
+        </label>
+      </div>
+      <input class="form-input" id="nc-phone" type="tel" placeholder="09xx-xxx-xxx（10位數）" oninput="fmtPhone(this)" maxlength="13">
+      <div id="nc-error" style="color:var(--red);font-size:12px;margin-top:4px;display:none">⚠ 請填寫客戶姓名</div>
+      <div id="nc-phone-err" style="color:var(--red);font-size:12px;margin-top:4px;display:none">⚠ 需09開頭共10位數，或勾選「國外客戶」</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="form-group"><label class="form-label">施作地點</label><select class="form-input" id="nc-location"><option>台中</option><option>台北</option></select></div>
+      <div class="form-group"><label class="form-label">來源</label>
+      <select class="form-input" id="nc-source" onchange="handleSourceChange(this,'nc-source-custom')">
+        <option>客戶介紹</option><option>KOL分享</option><option>Google</option><option>Instagram</option>
+        <option>其他</option>
+      </select>
+      <input class="form-input" id="nc-source-custom" placeholder="請輸入來源…" style="display:none;margin-top:6px" onblur="saveCustomSource('nc-source','nc-source-custom')">
+    </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">💬 官方 LINE 聊天連結（選填）</label>
+      <input class="form-input" id="nc-line-url" placeholder="https://line.me/…">
+    </div>
+    <div class="form-group"><label class="form-label">備註</label>
+      <div class="note-wrap">
+        <textarea class="form-input" id="nc-note" rows="2" oninput="noteInput(this)" style="color:var(--text);background:var(--bg2);border:1px solid var(--border2);border-radius:8px;width:100%;padding:10px 12px;resize:none;"></textarea>
+        <div class="note-hint" id="nc-note-hint">家庭 ・ 另一伴 ・ 工作<br>生活城市 ・ 個性 ・ 我們聊什麼</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeModal('modal-add-client')">取消</button>
+      <button class="btn btn-primary" style="flex:2" onclick="saveNewClient()">建立客戶</button>
+    </div>
+  </div>
+</div>
+
+<!-- 新增成本 Modal -->
+<div class="modal-overlay" id="modal-add-cost" onclick="closeModalOutside(event,'modal-add-cost')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">新增收費紀錄</div>
+    <div class="form-group"><label class="form-label">項目名稱</label><input class="form-input" placeholder="睫毛嫁接"></div>
+    <div class="form-group"><label class="form-label">日期</label><input class="form-input" type="date"></div>
+    <div class="form-group"><label class="form-label">金額 (NT$)</label><input class="form-input" type="number" placeholder="3800"></div>
+    <div class="form-group"><label class="form-label">付款管道</label><select class="form-input"><option>現金</option><option>轉帳</option><option>LINE Pay</option><option>信用卡</option></select></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeModal('modal-add-cost')">取消</button>
+      <button class="btn btn-primary" style="flex:2">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 新增預約 Modal -->
+<div class="modal-overlay" id="modal-add-booking" onclick="closeModalOutside(event,'modal-add-booking')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">新增預約</div>
+    <div class="form-group"><label class="form-label">客戶</label><select class="form-input"><option>小美</option><option>佳琪</option><option>雅雯</option></select></div>
+    <div class="form-group"><label class="form-label">服務項目</label><select class="form-input"><option>睫毛嫁接</option><option>睫毛回補</option><option>霧眉</option><option>眉毛回補</option><option>霧唇</option><option>髮際線</option><option>除色</option></select></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="form-group"><label class="form-label">預約日期</label><input class="form-input" type="date"></div>
+      <div class="form-group"><label class="form-label">時間</label><input class="form-input" type="time"></div>
+    </div>
+    <div class="form-group"><label class="form-label">施作地點</label><select class="form-input"><option>台中</option><option>台北</option></select></div>
+    <div class="form-group"><label class="form-label">備註</label><textarea class="form-input" rows="2" placeholder="特殊需求…"></textarea></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeModal('modal-add-booking')">取消</button>
+      <button class="btn btn-primary" style="flex:2">確認預約</button>
+    </div>
+  </div>
+</div>
+
+<!-- 新增/編輯優惠 Modal -->
+<div class="modal-overlay" id="modal-add-coupon" onclick="closeModalOutside(event,'modal-add-coupon')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="coupon-modal-title">新增優惠</div>
+    <div class="form-group">
+      <label class="form-label">優惠類型</label>
+      <select class="form-input" id="cp-type">
+        <option>🎂 生日優惠</option>
+        <option>👫 兩人同行優惠</option>
+        <option>💌 介紹朋友回饋金</option>
+        <option>✨ 自訂優惠</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">優惠說明</label>
+      <input class="form-input" id="cp-desc" placeholder="如：9折・$300 回饋金・免費加購…">
+    </div>
+    <div class="form-group">
+      <label class="form-label">優惠金額 (NT$)，折扣請填 0</label>
+      <input class="form-input" id="cp-amount" type="number" placeholder="300" min="0">
+    </div>
+    <div class="form-group">
+      <label class="form-label">發放日期</label>
+      <input class="form-input" id="cp-issued" type="date">
+    </div>
+    <div class="form-group">
+      <label class="form-label">有效期限</label>
+      <select class="form-input" id="cp-validity">
+        <option value="6m">6 個月</option>
+        <option value="1y">1 年</option>
+        <option value="none">無期限</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">使用狀態</label>
+      <select class="form-input" id="cp-status">
+        <option value="unused">未使用</option>
+        <option value="used">已使用</option>
+      </select>
+    </div>
+    <div id="cp-err" style="color:var(--red);font-size:12px;margin-bottom:8px;display:none"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeModal('modal-add-coupon')">取消</button>
+      <button class="btn btn-primary" style="flex:2" onclick="saveCoupon()">儲存</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- 摘要詳細列表 Modal -->
+<div class="modal-overlay" id="modal-summary" onclick="closeModalOutside(event,'modal-summary')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="flex-between" style="margin-bottom:12px">
+      <div class="modal-title" id="summary-modal-title" style="margin-bottom:0">詳細列表</div>
+      <button class="btn btn-secondary btn-xs" onclick="closeModal('modal-summary')">關閉</button>
+    </div>
+    <div id="summary-modal-body"></div>
+  </div>
+</div>
+
+<!-- 新增支出成本 Modal -->
+<div class="modal-overlay" id="modal-add-expense" onclick="closeModalOutside(event,'modal-add-expense')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="expense-modal-title">新增支出</div>
+    <div class="form-group">
+      <label class="form-label">耗材 / 項目</label>
+      <div id="expense-item-grid" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+      <input class="form-input" id="expense-item-custom" placeholder="或手動輸入名稱…" style="margin-top:4px">
+    </div>
+    <div class="form-group"><label class="form-label">日期</label><input class="form-input" id="expense-date" type="date"></div>
+    <div class="form-group"><label class="form-label">金額 (NT$)</label><input class="form-input" id="expense-amount" type="number" placeholder="500"></div>
+    <div class="form-group"><label class="form-label">購買管道</label><select class="form-input" id="expense-channel"><option>現金</option><option>轉帳</option><option>蝦皮</option><option>eyevis</option><option>品牌管道</option><option>LINE麻藥業務</option><option>其他</option></select></div>
+    <div class="form-group"><label class="form-label">備註</label><textarea class="form-input" id="expense-note" rows="2" placeholder="廠商・批號…（可不填）"></textarea></div>
+    <div id="expense-err" style="color:var(--red);font-size:12px;margin-bottom:8px;display:none"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeModal('modal-add-expense')">取消</button>
+      <button class="btn btn-primary" style="flex:2" onclick="saveExpense()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 新增/編輯優惠 Modal -->
+<div class="modal-overlay" id="modal-add-coupon" onclick="closeModalOutside(event,'modal-add-coupon')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="coupon-modal-title">新增優惠</div>
+    <div class="form-group">
+      <label class="form-label">優惠類型</label>
+      <select class="form-input" id="cp-type">
+        <option>🎂 生日優惠</option>
+        <option>👫 兩人同行優惠</option>
+        <option>💌 介紹朋友回饋金</option>
+        <option>✨ 自訂優惠</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">優惠說明</label>
+      <input class="form-input" id="cp-desc" placeholder="如：9折・$300 回饋金・免費加購…">
+    </div>
+    <div class="form-group">
+      <label class="form-label">優惠金額 (NT$)，折扣請填 0</label>
+      <input class="form-input" id="cp-amount" type="number" placeholder="300" min="0">
+    </div>
+    <div class="form-group">
+      <label class="form-label">發放日期</label>
+      <input class="form-input" id="cp-issued" type="date">
+    </div>
+    <div class="form-group">
+      <label class="form-label">有效期限</label>
+      <select class="form-input" id="cp-validity">
+        <option value="6m">6 個月</option>
+        <option value="1y">1 年</option>
+        <option value="none">無期限</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">使用狀態</label>
+      <select class="form-input" id="cp-status">
+        <option value="unused">未使用</option>
+        <option value="used">已使用</option>
+      </select>
+    </div>
+    <div id="cp-err" style="color:var(--red);font-size:12px;margin-bottom:8px;display:none"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeModal('modal-add-coupon')">取消</button>
+      <button class="btn btn-primary" style="flex:2" onclick="saveCoupon()">儲存</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- 摘要詳細列表 Modal -->
+<div class="modal-overlay" id="modal-summary" onclick="closeModalOutside(event,'modal-summary')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="flex-between" style="margin-bottom:12px">
+      <div class="modal-title" id="summary-modal-title" style="margin-bottom:0">詳細列表</div>
+      <button class="btn btn-secondary btn-xs" onclick="closeModal('modal-summary')">關閉</button>
+    </div>
+    <div id="summary-modal-body"></div>
+  </div>
+</div>
+
+<!-- 新增支出成本 Modal -->
+<div class="modal-overlay" id="modal-add-expense" onclick="closeModalOutside(event,'modal-add-expense')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="expense-modal-title">新增支出</div>
+    <div class="form-group">
+      <label class="form-label">耗材名稱 <span style="font-size:10px;color:var(--text3)">點選或手動輸入</span></label>
+      <div id="expense-item-grid" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+      <input class="form-input" id="expense-item-custom" placeholder="手動輸入名稱…" style="margin-top:4px">
+    </div>
+    <div class="form-group"><label class="form-label">日期</label><input class="form-input" id="expense-date" type="date"></div>
+    <div class="form-group"><label class="form-label">金額 (NT$)</label><input class="form-input" id="expense-amount" type="number" placeholder="500"></div>
+    <div class="form-group">
+      <label class="form-label">購買管道</label>
+      <select class="form-input" id="expense-channel">
+        <option id="exp-ch-dynamic"></option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">備註（選填）</label><textarea class="form-input" id="expense-note" rows="2" placeholder="廠商名稱・批號…"></textarea></div>
+    <div id="expense-err" style="color:var(--red);font-size:12px;margin-bottom:8px;display:none"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeModal('modal-add-expense')">取消</button>
+      <button class="btn btn-primary" style="flex:2" onclick="saveExpense()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 成本新增：搜尋客戶 Modal -->
+<div class="modal-overlay" id="modal-cost-search" onclick="closeModalOutside(event,'modal-cost-search')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">搜尋客戶 → 新增消費</div>
+    <div class="search-bar" style="margin:0 0 10px">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="cost-client-search" placeholder="輸入客戶姓名…" oninput="costClientSearch(this.value)">
+    </div>
+    <div id="cost-client-results" style="max-height:320px;overflow-y:auto"></div>
+    <div style="height:8px"></div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════ -->
+<script>
+// ══ KEYS ══
+const STORE_KEY='crm_clients_v2',RECORDS_KEY='crm_records_v2',REMINDED_KEY='crm_reminded_v2',
+  CFG_KEY='crm_cfg_v2',TAGBANK_KEY='crm_tagbank_v2',COUPONS_KEY='crm_coupons_v2',
+  EXPENSE_KEY='crm_expenses_v2',SOURCE_KEY='crm_sources_v2';
+
+const NOW=new Date(),YR=NOW.getFullYear();
+function fD(d){if(!d)return'';return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function dAgo(n){const d=new Date();d.setDate(d.getDate()-n);return fD(d);}
+function dAhead(n){const d=new Date();d.setDate(d.getDate()+n);return fD(d);}
+function bday(m,d2){return `${YR}-${String(m).padStart(2,'0')}-${String(d2).padStart(2,'0')}`;}
+
+const defaultClients=[
+  {id:'c01',name:'小美',nickname:'小咪',gender:'女',age:29,phone:'0922-200-300',birthday:'1997-05-15',overseas:false,location:'台中',source:'客戶介紹',note:'個性：開朗活潑｜我們聊：美甲美妝',tags:['💡 開燈','😊 愛聊天','⏱ 趕時間','🌸 怕痛'],services:['睫毛'],lineUrl:''},
+  {id:'c02',name:'佳琪',nickname:'',gender:'女',age:27,phone:'0935-237-371',birthday:'1998-05-18',overseas:false,location:'台北',source:'KOL分享',note:'個性：安靜細心｜我們聊：生活旅遊',tags:['🤫 不貼膠帶','🌸 怕痛','🌿 自然系','👑 VIP'],services:['眉毛','霧唇'],lineUrl:''},
+  {id:'c03',name:'雅雯',nickname:'雯雯',gender:'女',age:26,phone:'0948-274-442',birthday:'2000-03-15',overseas:false,location:'台中',source:'Google',note:'個性：喜歡聊天｜我們聊：美甲美妝',tags:['🌿 自然系'],services:['髮際線','睫毛'],lineUrl:''},
+  {id:'c04',name:'Tina',nickname:'T',gender:'女',age:29,phone:'',birthday:'1996-07-17',overseas:false,location:'台北',source:'Instagram',note:'工作：網紅KOL｜生活城市：台北信義區',tags:['💸 高消費'],services:['眉毛'],lineUrl:''},
+  {id:'c05',name:'芷嫻',nickname:'嫻嫻',gender:'女',age:26,phone:'0956-789-012',birthday:'1999-12-25',overseas:false,location:'台中',source:'客戶介紹',note:'學生｜個性：活潑開朗',tags:['📚 學生'],services:['睫毛'],lineUrl:''},
+  {id:'c06',name:'陳美華',nickname:'美華',gender:'女',age:76,phone:'0911-111-110',birthday:'1950-01-20',overseas:false,location:'台中',source:'客戶介紹',note:'資深客戶，每季回訪',tags:['👑 VIP','🔄 高回訪','💸 高消費','💬 LINE回覆快'],services:['眉毛'],lineUrl:''},
+  {id:'c07',name:'林淑芬',nickname:'淑芬',gender:'女',age:75,phone:'0911-222-221',birthday:'1951-02-14',overseas:false,location:'台北',source:'Google',note:'個性：細心，問題多',tags:['😊 愛聊天','🌸 怕痛','🌿 自然系','📸 愛打卡'],services:['霧唇'],lineUrl:''},
+  {id:'c08',name:'張惠君',nickname:'惠君',gender:'女',age:74,phone:'0911-333-332',birthday:'1952-03-08',overseas:false,location:'台中',source:'客戶介紹',note:'固定每3個月回補',tags:['🔄 高回訪'],services:['睫毛'],lineUrl:''},
+  {id:'c09',name:'王雅玲',nickname:'雅玲',gender:'女',age:73,phone:'0911-444-443',birthday:'1953-04-22',overseas:false,location:'台北',source:'KOL分享',note:'愛嘗試新款',tags:['🎨 愛嘗試新款'],services:['眉毛'],lineUrl:''},
+  {id:'c10',name:'李佩君',nickname:'佩君',gender:'女',age:71,phone:'0911-555-554',birthday:'1954-05-30',overseas:false,location:'台中',source:'Google',note:'安靜，喜歡看手機',tags:['🤐 安靜型'],services:['霧唇'],lineUrl:''},
+  {id:'c11',name:'劉秀英',nickname:'秀英',gender:'女',age:70,phone:'0911-666-665',birthday:'1955-06-11',overseas:false,location:'台北',source:'客戶介紹',note:'敏感肌，用低敏材料',tags:['🌷 敏感肌'],services:['髮際線'],lineUrl:''},
+  {id:'c12',name:'黃淑華',nickname:'淑華',gender:'女',age:69,phone:'0911-777-776',birthday:'1956-07-03',overseas:false,location:'台中',source:'Instagram',note:'喜歡打卡分享',tags:['📸 愛打卡'],services:['睫毛'],lineUrl:''},
+  {id:'c13',name:'吳美珍',nickname:'美珍',gender:'女',age:68,phone:'0911-888-887',birthday:'1957-08-19',overseas:false,location:'台北',source:'客戶介紹',note:'高消費客戶',tags:['💸 高消費'],services:['眉毛'],lineUrl:''},
+  {id:'c14',name:'蔡雅芳',nickname:'雅芳',gender:'女',age:67,phone:'0911-999-998',birthday:'1958-09-07',overseas:false,location:'台中',source:'Google',note:'每月固定回訪',tags:['🔄 高回訪'],services:['霧唇'],lineUrl:''},
+  {id:'c15',name:'謝淑貞',nickname:'淑貞',gender:'女',age:66,phone:'0912-111-110',birthday:'1959-10-25',overseas:false,location:'台北',source:'KOL分享',note:'LINE回覆很快',tags:['💬 LINE回覆快'],services:['睫毛'],lineUrl:''},
+  {id:'c16',name:'鄭文雅',nickname:'文雅',gender:'女',age:65,phone:'0912-222-221',birthday:'1960-11-13',overseas:false,location:'台中',source:'客戶介紹',note:'不貼膠帶體質',tags:['🤫 不貼膠帶'],services:['眉毛'],lineUrl:''},
+  {id:'c17',name:'方佳慧',nickname:'佳慧',gender:'女',age:64,phone:'0912-333-332',birthday:'1961-12-01',overseas:false,location:'台北',source:'Google',note:'自然系風格',tags:['🌿 自然系'],services:['髮際線'],lineUrl:''},
+  {id:'c18',name:'許雪惠',nickname:'雪惠',gender:'女',age:64,phone:'0912-444-443',birthday:'1962-01-28',overseas:false,location:'台中',source:'Instagram',note:'愛嘗試不同顏色',tags:['🎨 愛嘗試新款'],services:['睫毛'],lineUrl:''},
+  {id:'c19',name:'楊雅惠',nickname:'雅惠',gender:'女',age:63,phone:'0912-555-554',birthday:'1963-02-10',overseas:false,location:'台北',source:'客戶介紹',note:'VIP回訪客',tags:['👑 VIP'],services:['眉毛'],lineUrl:''},
+  {id:'c20',name:'江麗華',nickname:'麗華',gender:'女',age:62,phone:'0912-666-665',birthday:'1964-03-18',overseas:false,location:'台中',source:'KOL分享',note:'怕痛，需輕手',tags:['🌸 怕痛'],services:['霧唇'],lineUrl:''},
+  {id:'c21',name:'沈玉蘭',nickname:'玉蘭',gender:'女',age:61,phone:'0912-777-776',birthday:'1965-04-05',overseas:false,location:'台北',source:'Google',note:'安靜型客戶',tags:['🤐 安靜型'],services:['睫毛'],lineUrl:''},
+  {id:'c22',name:'盧美鳳',nickname:'美鳳',gender:'女',age:59,phone:'0912-888-887',birthday:'1966-05-23',overseas:false,location:'台中',source:'客戶介紹',note:'敏感肌體質',tags:['🌷 敏感肌'],services:['眉毛'],lineUrl:''},
+  {id:'c23',name:'柯淑媛',nickname:'淑媛',gender:'女',age:58,phone:'0912-999-998',birthday:'1967-06-15',overseas:false,location:'台北',source:'Instagram',note:'愛拍照打卡',tags:['📸 愛打卡'],services:['霧唇'],lineUrl:''},
+  {id:'c24',name:'游雅婷',nickname:'雅婷',gender:'女',age:57,phone:'0913-111-110',birthday:'1968-07-20',overseas:false,location:'台中',source:'KOL分享',note:'高消費',tags:['💸 高消費'],services:['髮際線'],lineUrl:''},
+  {id:'c25',name:'戴秀琴',nickname:'秀琴',gender:'女',age:56,phone:'0913-222-221',birthday:'1969-08-08',overseas:false,location:'台北',source:'Google',note:'很準時',tags:['⏱ 趕時間'],services:['睫毛'],lineUrl:''},
+  {id:'c26',name:'歐陽美',nickname:'美美',gender:'女',age:55,phone:'0913-333-332',birthday:'1970-09-12',overseas:false,location:'台中',source:'客戶介紹',note:'開燈習慣',tags:['💡 開燈'],services:['眉毛'],lineUrl:''},
+  {id:'c27',name:'丁雅雯',nickname:'雅雯',gender:'女',age:54,phone:'0913-444-443',birthday:'1971-10-03',overseas:false,location:'台北',source:'Instagram',note:'回訪率高',tags:['🔄 高回訪'],services:['霧唇'],lineUrl:''},
+  {id:'c28',name:'石美玲',nickname:'美玲',gender:'女',age:53,phone:'0913-555-554',birthday:'1972-11-27',overseas:false,location:'台中',source:'KOL分享',note:'LINE常回覆',tags:['💬 LINE回覆快'],services:['睫毛'],lineUrl:''},
+  {id:'c29',name:'田淑芳',nickname:'淑芳',gender:'女',age:52,phone:'0913-666-665',birthday:'1973-12-15',overseas:false,location:'台北',source:'Google',note:'不貼膠帶',tags:['🤫 不貼膠帶'],services:['眉毛'],lineUrl:''},
+  {id:'c30',name:'范雅君',nickname:'雅君',gender:'女',age:52,phone:'0913-777-776',birthday:'1974-01-09',overseas:false,location:'台中',source:'客戶介紹',note:'自然系',tags:['🌿 自然系'],services:['髮際線'],lineUrl:''},
+  {id:'c31',name:'孟美慧',nickname:'美慧',gender:'女',age:51,phone:'0913-888-887',birthday:'1975-02-22',overseas:false,location:'台北',source:'Instagram',note:'愛新款',tags:['🎨 愛嘗試新款'],services:['睫毛'],lineUrl:''},
+  {id:'c32',name:'茅雪梅',nickname:'雪梅',gender:'女',age:50,phone:'0913-999-998',birthday:'1976-03-16',overseas:false,location:'台中',source:'KOL分享',note:'VIP',tags:['👑 VIP'],services:['眉毛'],lineUrl:''},
+  {id:'c33',name:'葛淑婷',nickname:'淑婷',gender:'女',age:49,phone:'0914-111-110',birthday:'1977-04-07',overseas:false,location:'台北',source:'Google',note:'怕痛',tags:['🌸 怕痛'],services:['霧唇'],lineUrl:''},
+  {id:'c34',name:'龔美吟',nickname:'美吟',gender:'女',age:47,phone:'0914-222-221',birthday:'1978-05-18',overseas:false,location:'台中',source:'客戶介紹',note:'安靜',tags:['🤐 安靜型'],services:['睫毛'],lineUrl:''},
+  {id:'c35',name:'廖雅文',nickname:'雅文',gender:'女',age:46,phone:'0914-333-332',birthday:'1979-06-02',overseas:false,location:'台北',source:'Instagram',note:'敏感肌',tags:['🌷 敏感肌'],services:['眉毛'],lineUrl:''},
+  {id:'c36',name:'殷美蘭',nickname:'美蘭',gender:'女',age:45,phone:'0914-444-443',birthday:'1980-07-14',overseas:false,location:'台中',source:'KOL分享',note:'打卡控',tags:['📸 愛打卡'],services:['霧唇'],lineUrl:''},
+  {id:'c37',name:'喬雅萍',nickname:'雅萍',gender:'女',age:44,phone:'0914-555-554',birthday:'1981-08-26',overseas:false,location:'台北',source:'Google',note:'高消費',tags:['💸 高消費'],services:['睫毛'],lineUrl:''},
+  {id:'c38',name:'倪美華',nickname:'美華',gender:'女',age:43,phone:'0914-666-665',birthday:'1982-09-04',overseas:false,location:'台中',source:'客戶介紹',note:'準時',tags:['⏱ 趕時間'],services:['眉毛'],lineUrl:''},
+  {id:'c39',name:'秦雅雯',nickname:'雅雯',gender:'女',age:42,phone:'0914-777-776',birthday:'1983-10-17',overseas:false,location:'台北',source:'Instagram',note:'開燈',tags:['💡 開燈'],services:['霧唇'],lineUrl:''},
+  {id:'c40',name:'尤淑芳',nickname:'淑芳',gender:'女',age:41,phone:'0914-888-887',birthday:'1984-11-29',overseas:false,location:'台中',source:'KOL分享',note:'回訪高',tags:['🔄 高回訪'],services:['睫毛'],lineUrl:''},
+  {id:'c41',name:'卞美琴',nickname:'美琴',gender:'女',age:40,phone:'0914-999-998',birthday:'1985-12-11',overseas:false,location:'台北',source:'Google',note:'LINE快',tags:['💬 LINE回覆快'],services:['眉毛'],lineUrl:''},
+  {id:'c42',name:'詹雅惠',nickname:'雅惠',gender:'女',age:40,phone:'0915-111-110',birthday:'1986-01-23',overseas:false,location:'台中',source:'客戶介紹',note:'不貼膠',tags:['🤫 不貼膠帶'],services:['霧唇'],lineUrl:''},
+  {id:'c43',name:'夏美芳',nickname:'美芳',gender:'女',age:39,phone:'0915-222-221',birthday:'1987-02-08',overseas:false,location:'台北',source:'Instagram',note:'自然系',tags:['🌿 自然系'],services:['睫毛'],lineUrl:''},
+  {id:'c44',name:'紀雅婷',nickname:'雅婷',gender:'女',age:38,phone:'0915-333-332',birthday:'1988-03-20',overseas:false,location:'台中',source:'KOL分享',note:'愛新款',tags:['🎨 愛嘗試新款'],services:['眉毛'],lineUrl:''},
+  {id:'c45',name:'巫淑慧',nickname:'淑慧',gender:'女',age:37,phone:'0915-444-443',birthday:'1989-04-12',overseas:false,location:'台北',source:'Google',note:'VIP',tags:['👑 VIP'],services:['霧唇'],lineUrl:''},
+  {id:'c46',name:'莫雪琳',nickname:'雪琳',gender:'女',age:35,phone:'0915-555-554',birthday:'1990-05-25',overseas:false,location:'台中',source:'客戶介紹',note:'怕痛',tags:['🌸 怕痛'],services:['睫毛'],lineUrl:''},
+  {id:'c47',name:'賈美玲',nickname:'美玲',gender:'女',age:34,phone:'0915-666-665',birthday:'1991-06-09',overseas:false,location:'台北',source:'Instagram',note:'安靜',tags:['🤐 安靜型'],services:['眉毛'],lineUrl:''},
+  {id:'c48',name:'屈雅婷',nickname:'雅婷',gender:'女',age:33,phone:'0915-777-776',birthday:'1992-07-21',overseas:false,location:'台中',source:'KOL分享',note:'敏感肌',tags:['🌷 敏感肌'],services:['霧唇'],lineUrl:''},
+  {id:'c49',name:'萬美麗',nickname:'美麗',gender:'女',age:32,phone:'0915-888-887',birthday:'1993-08-13',overseas:false,location:'台北',source:'Google',note:'打卡',tags:['📸 愛打卡'],services:['睫毛'],lineUrl:''},
+  {id:'c50',name:'顏雅芝',nickname:'雅芝',gender:'女',age:31,phone:'0915-999-998',birthday:'1994-09-05',overseas:false,location:'台中',source:'客戶介紹',note:'高消費',tags:['💸 高消費'],services:['眉毛'],lineUrl:''},
+  {id:'c51',name:'宮淑婷',nickname:'淑婷',gender:'女',age:30,phone:'0916-111-110',birthday:'1995-10-17',overseas:false,location:'台北',source:'Instagram',note:'準時',tags:['⏱ 趕時間'],services:['霧唇'],lineUrl:''}
+];
+const defaultRecords={
+  'c01':[{id:'r201',svc:'睫毛',date:'2026-05-12',needle:'12mm 0.10J',color:'深棕',amount:1800,note:'睫毛嫁接，客戶配合度佳',tags:['💡 開燈']},{id:'r202',svc:'睫毛',date:'2026-04-25',needle:'12mm 0.10J',color:'深棕',amount:1800,note:'睫毛嫁接，客戶配合度佳',tags:['💡 開燈']}],
+  'c02':[{id:'r203',svc:'眉毛',date:'2026-05-05',needle:'3RL',color:'霧感棕',amount:8000,note:'霧眉效果自然，客戶很滿意',tags:['🤫 不貼膠帶']},{id:'r204',svc:'霧唇',date:'2026-04-18',needle:'5RL',color:'玫瑰粉',amount:9500,note:'發色均勻，客戶開心',tags:['🤫 不貼膠帶']}],
+  'c03':[{id:'r205',svc:'霧唇',date:'2026-04-28',needle:'5RL',color:'玫瑰粉',amount:9000,note:'發色均勻，客戶開心',tags:['⏱ 趕時間']},{id:'r206',svc:'髮際線',date:'2026-04-11',needle:'1RL',color:'自然黑',amount:12000,note:'弧度設計自然',tags:['⏱ 趕時間']}],
+  'c04':[{id:'r207',svc:'髮際線',date:'2026-04-21',needle:'1RL',color:'自然黑',amount:12500,note:'弧度設計自然',tags:['😊 愛聊天']},{id:'r208',svc:'髮際線',date:'2026-04-04',needle:'1RL',color:'自然黑',amount:12500,note:'弧度設計自然',tags:['😊 愛聊天']}],
+  'c05':[{id:'r209',svc:'睫毛',date:'2026-04-14',needle:'12mm 0.10J',color:'深棕',amount:3800,note:'睫毛嫁接，客戶配合度佳',tags:['🌸 怕痛']},{id:'r210',svc:'眉毛',date:'2026-03-28',needle:'3RL',color:'霧感棕',amount:8000,note:'霧眉效果自然，客戶很滿意',tags:['🌸 怕痛']}],
+  'c06':[{id:'r211',svc:'睫毛',date:'2026-04-07',needle:'12mm 0.10J',color:'深棕',amount:4200,note:'睫毛嫁接，客戶配合度佳',tags:['🌿 自然系']},{id:'r212',svc:'眉毛',date:'2026-03-21',needle:'3RL',color:'霧感棕',amount:8500,note:'霧眉效果自然，客戶很滿意',tags:['🌿 自然系']}],
+  'c07':[{id:'r213',svc:'眉毛',date:'2026-03-31',needle:'3RL',color:'霧感棕',amount:7500,note:'霧眉效果自然，客戶很滿意',tags:['📚 學生']},{id:'r214',svc:'眉毛',date:'2026-03-14',needle:'3RL',color:'霧感棕',amount:7500,note:'霧眉效果自然，客戶很滿意',tags:['📚 學生']}],
+  'c08':[{id:'r215',svc:'霧唇',date:'2026-03-24',needle:'5RL',color:'玫瑰粉',amount:9500,note:'發色均勻，客戶開心',tags:['🌏 海外']},{id:'r216',svc:'髮際線',date:'2026-03-07',needle:'1RL',color:'自然黑',amount:12500,note:'弧度設計自然',tags:['🌏 海外']}],
+  'c09':[{id:'r217',svc:'睫毛',date:'2026-03-17',needle:'12mm 0.10J',color:'深棕',amount:4200,note:'睫毛嫁接，客戶配合度佳',tags:['🔄 高回訪']},{id:'r218',svc:'眉毛',date:'2026-02-28',needle:'3RL',color:'霧感棕',amount:8500,note:'霧眉效果自然，客戶很滿意',tags:['🔄 高回訪']}],
+  'c10':[{id:'r219',svc:'除色',date:'2026-03-10',needle:'平針',color:'—',amount:3500,note:'除色完整',tags:['💸 高消費']},{id:'r220',svc:'除色',date:'2026-02-21',needle:'平針',color:'—',amount:3500,note:'除色完整',tags:['💸 高消費']}],
+  'c11':[{id:'r221',svc:'睫毛',date:'2026-03-03',needle:'12mm 0.10J',color:'深棕',amount:3800,note:'睫毛嫁接，客戶配合度佳',tags:['👑 VIP']},{id:'r222',svc:'眉毛',date:'2026-02-14',needle:'3RL',color:'霧感棕',amount:8000,note:'霧眉效果自然，客戶很滿意',tags:['👑 VIP']}],
+  'c12':[{id:'r223',svc:'眉毛',date:'2026-02-24',needle:'3RL',color:'霧感棕',amount:8500,note:'霧眉效果自然，客戶很滿意',tags:['💡 開燈']},{id:'r224',svc:'霧唇',date:'2026-05-08',needle:'5RL',color:'玫瑰粉',amount:9500,note:'發色均勻，客戶開心',tags:['💡 開燈']}],
+  'c13':[{id:'r225',svc:'霧唇',date:'2026-02-17',needle:'5RL',color:'玫瑰粉',amount:9000,note:'發色均勻，客戶開心',tags:['🤫 不貼膠帶']},{id:'r226',svc:'霧唇',date:'2026-05-01',needle:'5RL',color:'玫瑰粉',amount:9000,note:'發色均勻，客戶開心',tags:['🤫 不貼膠帶']}],
+  'c14':[{id:'r227',svc:'髮際線',date:'2026-05-11',needle:'1RL',color:'自然黑',amount:12500,note:'弧度設計自然',tags:['⏱ 趕時間']},{id:'r228',svc:'除色',date:'2026-04-24',needle:'平針',color:'—',amount:3500,note:'除色完整',tags:['⏱ 趕時間']}],
+  'c15':[{id:'r229',svc:'睫毛',date:'2026-05-04',needle:'12mm 0.10J',color:'深棕',amount:4200,note:'睫毛嫁接，客戶配合度佳',tags:['😊 愛聊天']},{id:'r230',svc:'眉毛',date:'2026-04-17',needle:'3RL',color:'霧感棕',amount:8500,note:'霧眉效果自然，客戶很滿意',tags:['😊 愛聊天']}],
+  'c16':[{id:'r231',svc:'睫毛',date:'2026-04-27',needle:'12mm 0.10J',color:'深棕',amount:1800,note:'睫毛嫁接，客戶配合度佳',tags:['🌸 怕痛']},{id:'r232',svc:'睫毛',date:'2026-04-10',needle:'12mm 0.10J',color:'深棕',amount:1800,note:'睫毛嫁接，客戶配合度佳',tags:['🌸 怕痛']}],
+  'c17':[{id:'r233',svc:'眉毛',date:'2026-04-20',needle:'3RL',color:'霧感棕',amount:8000,note:'霧眉效果自然，客戶很滿意',tags:['🌿 自然系']},{id:'r234',svc:'霧唇',date:'2026-04-03',needle:'5RL',color:'玫瑰粉',amount:9000,note:'發色均勻，客戶開心',tags:['🌿 自然系']}],
+  'c18':[{id:'r235',svc:'霧唇',date:'2026-04-13',needle:'5RL',color:'玫瑰粉',amount:9500,note:'發色均勻，客戶開心',tags:['📚 學生']},{id:'r236',svc:'髮際線',date:'2026-03-27',needle:'1RL',color:'自然黑',amount:12500,note:'弧度設計自然',tags:['📚 學生']}],
+  'c19':[{id:'r237',svc:'髮際線',date:'2026-04-06',needle:'1RL',color:'自然黑',amount:12000,note:'弧度設計自然',tags:['🌏 海外']},{id:'r238',svc:'髮際線',date:'2026-03-20',needle:'1RL',color:'自然黑',amount:12000,note:'弧度設計自然',tags:['🌏 海外']}],
+  'c20':[{id:'r239',svc:'睫毛',date:'2026-03-30',needle:'12mm 0.10J',color:'深棕',amount:3800,note:'睫毛嫁接，客戶配合度佳',tags:['🔄 高回訪']},{id:'r240',svc:'眉毛',date:'2026-03-13',needle:'3RL',color:'霧感棕',amount:8000,note:'霧眉效果自然，客戶很滿意',tags:['🔄 高回訪']}],
+  'c21':[{id:'r241',svc:'睫毛',date:'2026-03-23',needle:'12mm 0.10J',color:'深棕',amount:4200,note:'睫毛嫁接，客戶配合度佳',tags:['💸 高消費']},{id:'r242',svc:'眉毛',date:'2026-03-06',needle:'3RL',color:'霧感棕',amount:8500,note:'霧眉效果自然，客戶很滿意',tags:['💸 高消費']}],
+  'c22':[{id:'r243',svc:'眉毛',date:'2026-03-16',needle:'3RL',color:'霧感棕',amount:7500,note:'霧眉效果自然，客戶很滿意',tags:['👑 VIP']},{id:'r244',svc:'眉毛',date:'2026-02-27',needle:'3RL',color:'霧感棕',amount:7500,note:'霧眉效果自然，客戶很滿意',tags:['👑 VIP']}],
+  'c23':[{id:'r245',svc:'霧唇',date:'2026-03-09',needle:'5RL',color:'玫瑰粉',amount:9000,note:'發色均勻，客戶開心',tags:['💡 開燈']},{id:'r246',svc:'髮際線',date:'2026-02-20',needle:'1RL',color:'自然黑',amount:12000,note:'弧度設計自然',tags:['💡 開燈']}],
+  'c24':[{id:'r247',svc:'睫毛',date:'2026-03-02',needle:'12mm 0.10J',color:'深棕',amount:4200,note:'睫毛嫁接，客戶配合度佳',tags:['🤫 不貼膠帶']},{id:'r248',svc:'眉毛',date:'2026-02-13',needle:'3RL',color:'霧感棕',amount:8500,note:'霧眉效果自然，客戶很滿意',tags:['🤫 不貼膠帶']}],
+  'c25':[{id:'r249',svc:'除色',date:'2026-02-23',needle:'平針',color:'—',amount:3000,note:'除色完整',tags:['⏱ 趕時間']},{id:'r250',svc:'除色',date:'2026-05-07',needle:'平針',color:'—',amount:3000,note:'除色完整',tags:['⏱ 趕時間']}],
+  'c26':[{id:'r251',svc:'睫毛',date:'2026-02-16',needle:'12mm 0.10J',color:'深棕',amount:3800,note:'睫毛嫁接，客戶配合度佳',tags:['😊 愛聊天']},{id:'r252',svc:'眉毛',date:'2026-04-30',needle:'3RL',color:'霧感棕',amount:8000,note:'霧眉效果自然，客戶很滿意',tags:['😊 愛聊天']}],
+  'c27':[{id:'r253',svc:'眉毛',date:'2026-05-10',needle:'3RL',color:'霧感棕',amount:8500,note:'霧眉效果自然，客戶很滿意',tags:['🌸 怕痛']},{id:'r254',svc:'霧唇',date:'2026-04-23',needle:'5RL',color:'玫瑰粉',amount:9000,note:'發色均勻，客戶開心',tags:['🌸 怕痛']}],
+  'c28':[{id:'r255',svc:'霧唇',date:'2026-05-03',needle:'5RL',color:'玫瑰粉',amount:9500,note:'發色均勻，客戶開心',tags:['🌿 自然系']},{id:'r256',svc:'霧唇',date:'2026-04-16',needle:'5RL',color:'玫瑰粉',amount:9500,note:'發色均勻，客戶開心',tags:['🌿 自然系']}],
+  'c29':[{id:'r257',svc:'髮際線',date:'2026-04-26',needle:'1RL',color:'自然黑',amount:12000,note:'弧度設計自然',tags:['📚 學生']},{id:'r258',svc:'除色',date:'2026-04-09',needle:'平針',color:'—',amount:3000,note:'除色完整',tags:['📚 學生']}],
+  'c30':[{id:'r259',svc:'睫毛',date:'2026-04-19',needle:'12mm 0.10J',color:'深棕',amount:4200,note:'睫毛嫁接，客戶配合度佳',tags:['🌏 海外']},{id:'r260',svc:'眉毛',date:'2026-04-02',needle:'3RL',color:'霧感棕',amount:8500,note:'霧眉效果自然，客戶很滿意',tags:['🌏 海外']}]
+};
+
+const defaultCoupons={
+  'c01':[{id:'cp01a',type:'🎂 生日優惠',desc:'生日當月9折',amount:0,issued:fD(NOW),validity:'1y',status:'unused'}],
+  'c02':[{id:'cp02a',type:'👫 兩人同行優惠',desc:'同行折$200',amount:200,issued:dAgo(10),validity:'6m',status:'unused'}],
+  'c03':[{id:'cp03a',type:'💌 介紹朋友回饋金',desc:'$300回饋金',amount:300,issued:dAgo(30),validity:'6m',status:'used'}],
+};
+
+const defaultExpenses={
+  '睫毛':[{id:'e01',item:'排毛',date:dAgo(15),amount:800,channel:'eyevis',note:'C捲0.07mm'},{id:'e02',item:'黑膠',date:dAgo(8),amount:450,channel:'品牌管道',note:'Vista膠水'}],
+  '眉毛/霧唇/髮際線':[{id:'e03',item:'霧眉色乳',date:dAgo(20),amount:1200,channel:'品牌管道',note:''},{id:'e04',item:'麻藥',date:dAgo(12),amount:900,channel:'line麻藥業務',note:''}],
+  '除色':[]
+};
+const defaultSources=['客戶介紹','KOL分享','Google','Instagram'];
+const defaultTagBank=['💡 開燈','🔴 關燈','🤫 不貼膠帶','⏱ 趕時間','😊 愛聊天','🌸 怕痛','🌿 自然系','📚 學生','🌏 海外','🐱 貓咪過敏','🌷 敏感肌','💊 藥物過敏','🤐 安靜型','💸 高消費','👑 VIP','🔄 高回訪','🎨 愛嘗試新款','📸 愛打卡','💬 LINE回覆快'];
+const defaultCfg={lash:[5,17,3],brow:[14,30,3,10],lip:[2,4,8,10,3,10]};
+
+const LASH_ITEMS=['美展購入','小型工具們','排毛','黑膠','睫毛夾','黏貼膠帶','睫膜/卸除膜','去蛋白水'];
+const BLH_ITEMS=['霧眉色乳','霧唇色乳','髮際線色料','針具','麻藥','工具們','蝦皮一次購買'];
+const LASH_CHANNELS=['eyevis','現金','轉帳','蝦皮','其他'];
+const BLH_CHANNELS=['蝦皮','品牌管道','line麻藥業務','現金','轉帳','其他'];
+const SVC_ITEMS={'睫毛':LASH_ITEMS,'眉毛/霧唇/髮際線':BLH_ITEMS,'除色':['除色液','中和液','防護膜','棉花棒','清潔棉片']};
+const SVC_CHANNELS={'睫毛':LASH_CHANNELS,'眉毛/霧唇/髮際線':BLH_CHANNELS,'除色':['現金','蝦皮','品牌管道','其他']};
+
+// ── localStorage fallback（Supabase 為主，ls/lsSave 保留相容）──
+function ls(k,d){try{const r=localStorage.getItem(k);return r?JSON.parse(r):d;}catch(e){return d;}}
+function lsSave(k,v){
+  try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}
+  // 非同步同步到 Supabase
+  const keyMap={
+    [STORE_KEY]:'_sb_clients',[RECORDS_KEY]:'_sb_records',
+    [CFG_KEY]:'crm_cfg',[TAGBANK_KEY]:'crm_tagbank',
+    [SOURCE_KEY]:'crm_sources',[REMINDED_KEY]:'crm_reminded'
+  };
+  if(keyMap[k]) dbSetKV(keyMap[k], v).catch(console.error);
+}
+
+// ── 從 Supabase 預載資料（由 supabase-db.js 填入 window._db_* ）──
+let clients     = window._db_clients   || defaultClients;
+let recordsDB   = window._db_records   || defaultRecords;
+let remindedDB  = window._db_reminded  || {};
+let cfg         = window._db_cfg       || defaultCfg;
+let tagBank     = window._db_tagBank   || defaultTagBank;
+let couponsDB   = window._db_coupons   || defaultCoupons;
+let expensesDB  = window._db_expenses  || defaultExpenses;
+let sourcesDB   = window._db_sources   || defaultSources;
+let currentClientId=null,currentFilter='全部',currentRecordId=null,currentCouponId=null,
+  currentExpenseId=null,currentCostSvc='睫毛',currentExpSvc='睫毛';
+let statYear=YR,statMonth=NOW.getMonth();
+let costYear=YR,costMonth=NOW.getMonth();
+
+const SVC={'睫毛':{icon:'👀'},'眉毛':{icon:'👑'},'霧唇':{icon:'👄'},'髮際線':{icon:'🎶'},'除色':{icon:'🪄'}};
+const TC=['green','amber','red','blue','purple','pink'];
+const LINE_URL='https://manager.line.biz/';
+
+// ── DATE ──
+function pd(s){if(!s)return null;const p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
+function dOnly(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
+function addD(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
+function addM(d,n){const r=new Date(d);r.setMonth(r.getMonth()+n);return r;}
+function fDisp(d){if(!d)return'';return(d.getMonth()+1)+'月'+d.getDate()+'日';}
+function fMD(s){if(!s)return'';const p=s.split('-');if(p.length<3)return s;return parseInt(p[1])+'月'+parseInt(p[2])+'日';}
+function eow(d){const r=new Date(d);r.setDate(r.getDate()+(7-r.getDay()));return dOnly(r);}
+function cpExp(cp){const b=pd(cp.issued);if(!b)return null;if(cp.validity==='6m')return addM(b,6);if(cp.validity==='1y')return addM(b,12);return null;}
+
+// ── PHONE ──
+function fmtPhone(input){let v=input.value.replace(/\D/g,'');if(v.length>10)v=v.slice(0,10);if(v.length>=7)v=v.slice(0,4)+'-'+v.slice(4,7)+'-'+v.slice(7);else if(v.length>=4)v=v.slice(0,4)+'-'+v.slice(4);input.value=v;}
+function isVP(ph){return /^09\d{8}$/.test(ph.replace(/[-\s]/g,''));}
+function toggleOverseasNew(){const cb=document.getElementById('nc-overseas'),ph=document.getElementById('nc-phone');if(!cb||!ph)return;ph.disabled=cb.checked;ph.value='';ph.placeholder=cb.checked?'國外客戶免填電話':'09xx-xxx-xxx（10位數）';const e=document.getElementById('nc-phone-err');if(e)e.style.display='none';}
+function toggleOverseasEdit(){const cb=document.getElementById('ed-overseas'),ph=document.getElementById('ed-phone');if(!cb||!ph)return;ph.disabled=cb.checked;ph.value='';ph.placeholder=cb.checked?'國外客戶免填電話':'09xx-xxx-xxx（10位數）';const e=document.getElementById('ed-phone-err');if(e)e.style.display='none';}
+
+// ── NOTE HINT (stays visible while empty, hides when has value) ──
+function noteInput(ta){
+  if(!ta)return;
+  const hint=document.getElementById(ta.id+'-hint');
+  if(hint){hint.style.opacity=ta.value?'0':'1';}
+  if(ta.value)ta.classList.add('has-value');else ta.classList.remove('has-value');
+}
+
+// ── LINE ──
+function openLine(e){e.preventDefault();e.stopPropagation();window.open(LINE_URL,'_blank');}
+
+// ── SOURCE ──
+function initSourceSelects(){['ed-source','nc-source'].forEach(id=>{const sel=document.getElementById(id);if(!sel)return;const cur=sel.value;sel.innerHTML='';sourcesDB.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});const other=document.createElement('option');other.value='__other__';other.textContent='其他（輸入）';sel.appendChild(other);if(sourcesDB.includes(cur))sel.value=cur;});}
+function handleSourceChange(sel,cid){const inp=document.getElementById(cid);if(!inp)return;inp.style.display=sel.value==='__other__'?'block':'none';if(sel.value==='__other__')inp.focus();}
+function saveCustomSource(selId,cid){const inp=document.getElementById(cid);if(!inp)return;const val=inp.value.trim();if(!val){inp.style.display='none';return;}if(!sourcesDB.includes(val)){sourcesDB.push(val);lsSave(SOURCE_KEY,sourcesDB);initSourceSelects();}const sel=document.getElementById(selId);if(sel)sel.value=val;inp.style.display='none';}
+function getSrc(selId,cid){const sel=document.getElementById(selId);if(!sel)return'';if(sel.value==='__other__')return document.getElementById(cid)?.value.trim()||'';return sel.value;}
+function setSrc(selId,cid,val){const sel=document.getElementById(selId);if(!sel)return;if(sourcesDB.includes(val)){sel.value=val;}else if(val){sel.value='__other__';const inp=document.getElementById(cid);if(inp){inp.style.display='block';inp.value=val;}}else{sel.value=sourcesDB[0]||'';}}
+
+// ── TAG BANK ──
+function usedTags(){const u=new Set();clients.forEach(c=>(c.tags||[]).forEach(t=>u.add(t)));Object.values(recordsDB).forEach(rs=>(rs||[]).forEach(r=>(r.tags||[]).forEach(t=>u.add(t))));return u;}
+function renderTagBank(){const el=document.getElementById('tag-bank-list'),ce=document.getElementById('tag-bank-count');if(!el)return;const used=usedTags();if(ce)ce.textContent=tagBank.length+'/50 個';el.innerHTML=tagBank.map(t=>`<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:16px;font-size:12px;font-weight:500;background:var(--card);border:1px solid var(--border2);color:var(--text2)">${t}${used.has(t)?`<span style="font-size:10px;color:var(--text3)">●</span>`:`<span onclick="rmBank('${t.replace(/'/g,"\\'")}')" style="cursor:pointer;font-size:14px;opacity:0.5">×</span>`}</span>`).join('');renderBankPicker();}
+function renderBankPicker(){const pk=document.getElementById('tag-bank-picker');if(!pk)return;pk.innerHTML=tagBank.map(t=>`<span onclick="addBankTag('${t.replace(/'/g,"\\'")}',this)" style="display:inline-flex;align-items:center;padding:3px 9px;border-radius:14px;font-size:11px;cursor:pointer;background:var(--bg2);border:1px solid var(--border);color:var(--text2)">${t}</span>`).join('');}
+function addTagToBank(){const input=document.getElementById('tag-bank-input'),err=document.getElementById('tag-bank-err'),val=input?.value.trim();if(!val){if(err){err.textContent='⚠ 請輸入標籤名稱';err.style.display='block';}return;}if(tagBank.length>=50){if(err){err.textContent='⚠ 已達上限50個';err.style.display='block';}return;}if(tagBank.includes(val)){if(err){err.textContent='⚠ 此標籤已存在';err.style.display='block';}return;}if(err)err.style.display='none';tagBank.push(val);lsSave(TAGBANK_KEY,tagBank);if(input)input.value='';renderTagBank();}
+function rmBank(tag){if(usedTags().has(tag)){showToast('⚠ 此標籤使用中，無法刪除');return;}showConfirm(`確定刪除標籤「${tag}」？`,()=>{tagBank=tagBank.filter(t=>t!==tag);lsSave(TAGBANK_KEY,tagBank);renderTagBank();showToast('🗑 標籤已刪除');});}
+function addBankTag(tag){const tc=document.getElementById('tag-container');if(!tc)return;if([...tc.querySelectorAll('.tag')].some(el=>el.childNodes[0].textContent.trim()===tag)){showToast('此標籤已新增');return;}const idx=tagBank.indexOf(tag);const te=document.createElement('span');te.className=`tag ${TC[idx>=0?idx%TC.length:0]}`;te.innerHTML=`${tag} <span class="del" onclick="removeTag(this)">×</span>`;tc.appendChild(te);}
+function renderRecTags(){const g=document.getElementById('rec-tag-suggestions');if(!g)return;const freq={};clients.forEach(c=>(c.tags||[]).forEach(t=>{freq[t]=(freq[t]||0)+1;}));const top=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,10).map(x=>x[0]);g.innerHTML=top.map(t=>`<span onclick="addRecTagSug('${t.replace(/'/g,"\\'")}',this)" style="display:inline-flex;align-items:center;padding:3px 9px;border-radius:14px;font-size:11px;cursor:pointer;background:var(--bg2);border:1px solid var(--border);color:var(--text2)">${t}</span>`).join('');}
+function addRecTagSug(tag){const tc=document.getElementById('rec-tag-container');if(!tc)return;if([...tc.querySelectorAll('.tag')].some(el=>el.childNodes[0].textContent.trim()===tag)){showToast('此標籤已新增');return;}const idx=tagBank.indexOf(tag);const col=TC[idx>=0?idx%TC.length:0];const te=document.createElement('span');te.className=`tag ${col}`;te.style.cssText='font-size:11px;padding:3px 8px';te.innerHTML=`${tag} <span onclick="this.parentElement.remove()" style="cursor:pointer;opacity:0.6">×</span>`;tc.appendChild(te);}
+
+// ── SEARCH ──
+function doSearch(q){
+  const query=q.trim().toLowerCase();
+  const listEl=document.getElementById('client-list'),countEl=document.getElementById('client-count');
+  if(!query){renderClientList();return;}
+  const found=clients.filter(c=>c.name.toLowerCase().includes(query)||(c.nickname||'').toLowerCase().includes(query)||(c.tags||[]).some(t=>t.toLowerCase().includes(query)));
+  if(countEl)countEl.textContent='共 '+found.length+' 位';
+  if(listEl)listEl.innerHTML=found.length?found.map(clientRow).join(''):`<div class="empty"><div class="empty-icon">🔍</div><p>找不到「${q}」</p></div>`;
+}
+
+// ── CLIENT LIST ──
+function lastRec(c){const rs=recordsDB[c.id]||[];return rs.length?rs.map(r=>r.date).sort().reverse()[0]:'';}
+// First record date = first time ever consumed
+function firstRec(c){const rs=recordsDB[c.id]||[];return rs.length?rs.map(r=>r.date).sort()[0]:'';}
+
+function clientRow(c){
+  const loc=c.location==='台中'?`<span class="loc-badge loc-tc">台中</span>`:`<span class="loc-badge loc-tp">台北</span>`;
+  const svc=(c.services||[]).map(s=>(SVC[s]||{}).icon+' '+s).join('・')||'未設定';
+  // Show up to 4 tags; flex-wrap:wrap in container makes 3rd+ wrap to next line
+  const tags=(c.tags||[]).slice(0,4).map((t,i)=>`<span class="tag ${TC[i%TC.length]}" style="font-size:11px;padding:3px 8px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t}</span>`).join('');
+  const ph=c.overseas?'🌏 海外':(c.phone||'未填電話');
+  const nn=c.nickname?`<span style="font-size:11px;color:var(--text3);margin-left:5px">（${c.nickname}）</span>`:'';
+  // tags: max 2 visible inline, rest wrap
+  const tagItems=(c.tags||[]).slice(0,4).map((t,i)=>`<span class="tag ${TC[i%TC.length]}" style="font-size:10px;padding:2px 7px">${t}</span>`);
+  const tagsHtml=tagItems.length?`<div class="tag-row" style="margin-top:4px;flex-wrap:wrap;gap:4px">${tagItems.join('')}</div>`:'';
+  return `<div class="list-item-wrap" style="border-bottom:1px solid var(--border)" onclick="openClientDetail('${c.id}')">
+    <div style="display:flex;align-items:flex-start;padding:10px 14px 0;gap:12px">
+
+      <!-- 頭像 -->
+      <div class="avatar" style="flex-shrink:0;margin-top:2px">${c.name.charAt(0)}</div>
+
+      <!-- 左欄：姓名、服務電話、標籤 -->
+      <div style="flex:1;min-width:0">
+        <span class="li-name" style="font-size:17px;font-weight:700">${c.name}${nn}</span>
+        <div style="font-size:12px;color:var(--text2);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${svc} ｜ ${ph}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">${tags}</div>
+      </div>
+
+      <!-- 右欄：地區 / LINE / 編輯刪除，間距12px，編輯刪除底部對齊左欄標籤 -->
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:12px;flex-shrink:0;align-self:flex-start" onclick="event.stopPropagation()">
+        ${loc}
+        <a href="${c.lineUrl||'https://manager.line.biz/'}" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:2px;padding:2px 8px;border-radius:10px;background:#06C755;color:white;font-size:10px;font-weight:600;text-decoration:none">💬 LINE</a>
+        <div style="display:flex;gap:4px">
+          <button style="padding:2px 8px;border-radius:6px;font-size:10px;font-weight:500;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer" onclick="event.stopPropagation();openClientDetail('${c.id}')">✏️</button>
+          <button style="padding:2px 8px;border-radius:6px;font-size:10px;font-weight:500;border:1px solid #e8c0c0;background:#fdf0f0;color:var(--red);cursor:pointer" onclick="event.stopPropagation();confirmDel('${c.id}','${c.name}')">🗑</button>
+        </div>
+      </div>
+
+    </div>
+    <!-- 框行最下方空 13px（標籤/編輯刪除 為基準） -->
+    <div style="height:13px"></div>
+  </div>`;
+}
+
+function renderClientList(filter){
+  if(filter!==undefined)currentFilter=filter;
+  const le=document.getElementById('client-list'),ce=document.getElementById('client-count');
+  const sorted=[...clients].sort((a,b)=>lastRec(b).localeCompare(lastRec(a)));
+  const filtered=currentFilter&&currentFilter!=='全部'?sorted.filter(c=>(c.services||[]).includes(currentFilter)):sorted;
+  if(ce)ce.textContent='共 '+filtered.length+' 位';
+
+  // summary card values
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  const tc=clients.filter(c=>c.location==='台中').length,tp=clients.filter(c=>c.location==='台北').length;
+  set('stat-total',clients.length);
+  set('stat-tc','台中 '+tc+'・台北 '+tp+' ›');
+
+  const nowM=NOW.getMonth(),nowY=NOW.getFullYear();
+  // 本月施作
+  let mc=0;Object.values(recordsDB).forEach(rs=>(rs||[]).forEach(r=>{const d=pd(r.date);if(d&&d.getFullYear()===nowY&&d.getMonth()===nowM)mc++;}));
+  set('stat-month-count',mc);
+
+  // 本月新客：clients whose firstRec date is in this month
+  const monthNew=clients.filter(c=>{
+    const fr=firstRec(c);if(!fr)return false;
+    const d=pd(fr);return d&&d.getFullYear()===nowY&&d.getMonth()===nowM;
+  }).length;
+  set('stat-month-new',monthNew);
+
+  // 本年施作
+  let yc=0;Object.values(recordsDB).forEach(rs=>(rs||[]).forEach(r=>{const d=pd(r.date);if(d&&d.getFullYear()===nowY)yc++;}));
+  set('stat-year-rec',yc);
+
+  if(le)le.innerHTML=filtered.length?filtered.map(clientRow).join(''):`<div class="empty"><div class="empty-icon">👤</div><p>尚無客戶資料</p></div>`;
+}
+
+// ── SUMMARY MODAL ──
+function openSummaryModal(type,extra){
+  const te=document.getElementById('summary-modal-title'),be=document.getElementById('summary-modal-body');
+  if(!te||!be)return;
+  const nowM=NOW.getMonth(),nowY=NOW.getFullYear();
+  const allR=[];Object.entries(recordsDB).forEach(([cid,rs])=>{const c=clients.find(x=>x.id===cid);(rs||[]).forEach(r=>allR.push({...r,clientId:cid,clientName:c?c.name:'?',location:c?c.location:'?',source:c?c.source:''}));});
+
+  if(type==='month_rec'){
+    te.textContent='本月施作紀錄';
+    const rows=allR.filter(r=>{const d=pd(r.date);return d&&d.getFullYear()===nowY&&d.getMonth()===nowM;}).sort((a,b)=>b.date.localeCompare(a.date));
+    be.innerHTML=rows.length?rows.map(r=>`<div onclick="closeModal('modal-summary');openClientDetail('${r.clientId}')" style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer"><span class="loc-badge ${r.location==='台中'?'loc-tc':'loc-tp'}" style="flex-shrink:0">${r.location}</span><div style="flex:1;min-width:0"><span style="font-size:13px;font-weight:600;color:var(--accent)">${r.clientName}</span><span style="font-size:12px;color:var(--text2);margin-left:6px">${(SVC[r.svc]||{}).icon||''} ${r.svc}</span><div style="font-size:11px;color:var(--text3)">${r.date}</div></div><span style="font-size:12px;font-weight:600;color:var(--accent)">$${Number(r.amount).toLocaleString()}</span></div>`).join(''):'<div class="empty"><p>本月尚無施作紀錄</p></div>';
+
+  }else if(type==='month_new'){
+    te.textContent='本月新客（首次消費）';
+    const newClients=clients.filter(c=>{const fr=firstRec(c);if(!fr)return false;const d=pd(fr);return d&&d.getFullYear()===nowY&&d.getMonth()===nowM;}).sort((a,b)=>firstRec(b).localeCompare(firstRec(a)));
+    be.innerHTML=newClients.length?newClients.map(c=>{const fr=firstRec(c);const svc=(c.services||[]).map(s=>(SVC[s]||{}).icon+' '+s).join('・');return`<div onclick="closeModal('modal-summary');openClientDetail('${c.id}')" style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer"><span class="loc-badge ${c.location==='台中'?'loc-tc':'loc-tp'}" style="flex-shrink:0">${c.location}</span><div style="flex:1;min-width:0"><span style="font-size:13px;font-weight:600;color:var(--accent)">${c.name}</span><div style="font-size:11px;color:var(--text3)">首次：${fr} ｜ ${svc}</div></div></div>`;}).join(''):'<div class="empty"><p>本月尚無新客</p></div>';
+
+  }else if(type==='year_rec'){
+    te.textContent='本年施作紀錄';
+    const rows=allR.filter(r=>{const d=pd(r.date);return d&&d.getFullYear()===nowY;}).sort((a,b)=>b.date.localeCompare(a.date));
+    // add year_new button
+    be.innerHTML=`<div style="margin-bottom:10px"><button class="btn btn-secondary btn-sm" onclick="openSummaryModal('year_new')">👤 本年新客名單</button></div>`+
+      (rows.length?rows.map(r=>`<div onclick="closeModal('modal-summary');openClientDetail('${r.clientId}')" style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer"><span class="loc-badge ${r.location==='台中'?'loc-tc':'loc-tp'}" style="flex-shrink:0">${r.location}</span><div style="flex:1;min-width:0"><span style="font-size:13px;font-weight:600;color:var(--accent)">${r.clientName}</span><span style="font-size:12px;color:var(--text2);margin-left:6px">${(SVC[r.svc]||{}).icon||''} ${r.svc}</span><div style="font-size:11px;color:var(--text3)">${r.date}</div></div><span style="font-size:12px;font-weight:600;color:var(--accent)">$${Number(r.amount).toLocaleString()}</span></div>`).join(''):'<div class="empty"><p>本年尚無施作紀錄</p></div>');
+
+  }else if(type==='year_new'){
+    te.textContent='本年新客（首次消費）';
+    const newClients=clients.filter(c=>{const fr=firstRec(c);if(!fr)return false;const d=pd(fr);return d&&d.getFullYear()===nowY;}).sort((a,b)=>firstRec(b).localeCompare(firstRec(a)));
+    be.innerHTML=newClients.length?newClients.map(c=>{const fr=firstRec(c);return`<div onclick="closeModal('modal-summary');openClientDetail('${c.id}')" style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer"><span class="loc-badge ${c.location==='台中'?'loc-tc':'loc-tp'}" style="flex-shrink:0">${c.location}</span><div style="flex:1;min-width:0"><span style="font-size:13px;font-weight:600;color:var(--accent)">${c.name}</span><div style="font-size:11px;color:var(--text3)">首次消費：${fr}</div></div></div>`;}).join(''):'<div class="empty"><p>本年尚無新客</p></div>';
+
+  }else if(type==='svc_clients'){
+    te.textContent=(SVC[extra]||{}).icon+' '+(extra||'')+'客戶名單';
+    const list=[...clients].filter(c=>(c.services||[]).includes(extra)).sort((a,b)=>(lastRec(b)||'').localeCompare(lastRec(a)||''));
+    be.innerHTML=list.length?list.map(c=>{const rs=(recordsDB[c.id]||[]).filter(r=>r.svc===extra);const last=rs.length?[...rs].sort((a,b)=>b.date.localeCompare(a.date))[0]:null;return`<div onclick="closeModal('modal-summary');openClientDetail('${c.id}')" style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer"><span class="loc-badge ${c.location==='台中'?'loc-tc':'loc-tp'}" style="flex-shrink:0">${c.location}</span><div style="flex:1;min-width:0"><span style="font-size:13px;font-weight:600;color:var(--accent)">${c.name}</span><div style="font-size:11px;color:var(--text3)">${last?'最後：'+last.date:'尚無紀錄'}</div></div></div>`;}).join(''):'<div class="empty"><p>尚無客戶</p></div>';
+
+  }else if(type==='multi_svc'){
+    const n=parseInt(extra)||1;te.textContent='施作 '+n+' 種服務的客戶';
+    const list=[...clients].filter(c=>(c.services||[]).length===n).sort((a,b)=>(lastRec(b)||'').localeCompare(lastRec(a)||''));
+    be.innerHTML=list.length?list.map(c=>{const tot=(recordsDB[c.id]||[]).reduce((s,r)=>s+(Number(r.amount)||0),0);return`<div onclick="closeModal('modal-summary');openClientDetail('${c.id}')" style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer"><span class="loc-badge ${c.location==='台中'?'loc-tc':'loc-tp'}" style="flex-shrink:0">${c.location}</span><div style="flex:1;min-width:0"><span style="font-size:13px;font-weight:600;color:var(--accent)">${c.name}</span><div style="font-size:11px;color:var(--text3)">${(c.services||[]).map(s=>(SVC[s]||{}).icon+' '+s).join('・')}</div></div><span style="font-size:12px;color:var(--text2)">$${tot.toLocaleString()}</span></div>`;}).join(''):'<div class="empty"><p>尚無符合客戶</p></div>';
+
+  }else if(type==='cost_detail'){
+    // Cost summary detail
+    te.textContent='本月收入明細（'+costYear+'年'+(costMonth+1)+'月）';
+    const rows=allR.filter(r=>{const d=pd(r.date);return d&&d.getFullYear()===costYear&&d.getMonth()===costMonth;}).sort((a,b)=>b.date.localeCompare(a.date));
+    const total=rows.reduce((s,r)=>s+(Number(r.amount)||0),0);
+    be.innerHTML=`<div style="font-size:14px;font-weight:700;color:var(--accent);margin-bottom:10px">合計 $${total.toLocaleString()} ｜ ${rows.length} 筆</div>`+
+      (rows.length?rows.map(r=>`<div onclick="closeModal('modal-summary');openClientDetail('${r.clientId}')" style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer"><span class="loc-badge ${r.location==='台中'?'loc-tc':'loc-tp'}" style="flex-shrink:0">${r.location}</span><div style="flex:1;min-width:0"><span style="font-size:13px;font-weight:600;color:var(--accent)">${r.clientName}</span><span style="font-size:12px;color:var(--text2);margin-left:6px">${(SVC[r.svc]||{}).icon||''} ${r.svc}</span><div style="font-size:11px;color:var(--text3)">${r.date}</div></div><span style="font-size:12px;font-weight:600;color:var(--accent)">$${Number(r.amount).toLocaleString()}</span></div>`).join(''):'<div class="empty"><p>本月尚無收入紀錄</p></div>');
+
+  }else{
+    te.textContent='全部客戶';
+    be.innerHTML=`<div class="sort-btn-row">
+      <button class="sort-btn active" onclick="sortAllClients('rec',this)">📅 最新消費</button>
+      <button class="sort-btn" onclick="sortAllClients('bday',this)">🎂 生日月日</button>
+      <button class="sort-btn" onclick="sortAllClients('reg',this)">📋 建檔順序</button>
+    </div><div id="all-client-list"></div>`;
+    renderAllClientList('rec');
+  }
+  openModal('modal-summary');
+}
+
+function openCostSummaryDetail(){openSummaryModal('cost_detail');}
+
+// ── CONFIRM ──
+function showConfirm(msg,onOk){let ov=document.getElementById('confirm-overlay');if(!ov){ov=document.createElement('div');ov.id='confirm-overlay';ov.style.cssText='position:fixed;inset:0;background:rgba(30,25,18,0.55);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px';ov.innerHTML=`<div style="background:var(--card);border-radius:16px;padding:24px 20px;max-width:320px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.2)"><div id="confirm-msg" style="font-size:14px;line-height:1.7;color:var(--text);margin-bottom:20px;white-space:pre-line"></div><div style="display:flex;gap:8px"><button class="btn btn-secondary" style="flex:1" id="confirm-cancel">取消</button><button class="btn btn-danger" style="flex:1" id="confirm-ok">確定</button></div></div>`;document.body.appendChild(ov);}document.getElementById('confirm-msg').textContent=msg;ov.style.display='flex';document.getElementById('confirm-cancel').onclick=()=>{ov.style.display='none';};document.getElementById('confirm-ok').onclick=()=>{ov.style.display='none';onOk();};}
+function confirmDel(id,name){showConfirm(`確定要刪除「${name}」的所有資料嗎？\n此操作無法復原。`,()=>{clients=clients.filter(c=>c.id!==id);delete recordsDB[id];delete couponsDB[id];lsSave(STORE_KEY,clients);lsSave(RECORDS_KEY,recordsDB);lsSave(COUPONS_KEY,couponsDB);renderClientList();renderTagBank();showToast('🗑 已刪除：'+name);});}
+
+// ── CLIENT DETAIL ──
+function openClientDetail(id){
+  currentClientId=id;const c=clients.find(x=>x.id===id);if(!c)return;
+  const sv=(eid,v)=>{const el=document.getElementById(eid);if(el)el.value=v||'';};
+  sv('ed-name',c.name);sv('ed-nickname',c.nickname||'');sv('ed-gender',c.gender||'女');
+  // age dropdown - ensure options exist first
+  const ageSelEd=document.getElementById('ed-age');
+  if(ageSelEd&&ageSelEd.options.length<5)initAgeDropdowns();
+  sv('ed-age',c.age||'');sv('ed-phone',c.phone||'');sv('ed-location',c.location||'台中');sv('ed-birthday',c.birthday||'');
+  setSrc('ed-source','ed-source-custom',c.source);
+  const noteEl=document.getElementById('ed-note');if(noteEl){noteEl.value=c.note||'';noteInput(noteEl);}
+  const ovCb=document.getElementById('ed-overseas'),phEl=document.getElementById('ed-phone');
+  if(ovCb){ovCb.checked=!!c.overseas;if(phEl){phEl.disabled=!!c.overseas;phEl.placeholder=c.overseas?'國外客戶免填電話':'09xx-xxx-xxx（10位數）';}}
+  const svcs=new Set();(recordsDB[id]||[]).forEach(r=>{if(r.svc)svcs.add(r.svc);});
+  document.querySelectorAll('#ed-services .service-item').forEach(item=>item.classList.toggle('selected',svcs.has(item.dataset.svc)));
+  const tc=document.getElementById('tag-container');
+  if(tc)tc.innerHTML=(c.tags||[]).map((t,i)=>`<span class="tag ${TC[i%TC.length]}">${t} <span class="del" onclick="removeTag(this)">×</span></span>`).join('');
+  renderBankPicker();renderRecords(id);renderCoupons(id);
+  const firstTab=document.querySelector('#modal-client-detail .pill-tabs .pill-tab');
+  if(firstTab)switchDetailTab(firstTab,'dt-basic');
+  openModal('modal-client-detail');
+}
+function saveClientEdits(){
+  const nameVal=document.getElementById('ed-name')?.value.trim();
+  const overseas=document.getElementById('ed-overseas')?.checked||false;
+  const phone=document.getElementById('ed-phone')?.value.trim()||'';
+  const nameErr=document.getElementById('ed-name-err'),phoneErr=document.getElementById('ed-phone-err');
+  let ok=true;
+  if(!nameVal){if(nameErr)nameErr.style.display='block';ok=false;}else if(nameErr)nameErr.style.display='none';
+  if(!overseas&&!isVP(phone)){if(phoneErr)phoneErr.style.display='block';ok=false;}else if(phoneErr)phoneErr.style.display='none';
+  if(!ok)return;
+  const c=clients.find(x=>x.id===currentClientId);if(!c)return;
+  c.name=nameVal;c.nickname=document.getElementById('ed-nickname')?.value.trim()||'';
+  c.gender=document.getElementById('ed-gender')?.value||'女';c.age=document.getElementById('ed-age')?.value||'';
+  c.phone=overseas?'':phone.replace(/[-\s]/g,'').replace(/^(\d{4})(\d{3})(\d{3})$/,'$1-$2-$3');
+  c.overseas=overseas;c.location=document.getElementById('ed-location')?.value||'台中';
+  c.source=getSrc('ed-source','ed-source-custom');
+  c.note=document.getElementById('ed-note')?.value.trim()||'';
+  const bdEl=document.getElementById('ed-birthday');if(bdEl)c.birthday=bdEl.value;
+  c.tags=[...document.querySelectorAll('#tag-container .tag')].map(el=>el.childNodes[0].textContent.trim()).filter(Boolean);
+  lsSave(STORE_KEY,clients);renderClientList();renderTagBank();closeModal('modal-client-detail');showToast('✅ 已儲存：'+c.name);
+}
+function saveNewClient(){
+  const name=document.getElementById('nc-name')?.value.trim();
+  const overseas=document.getElementById('nc-overseas')?.checked||false;
+  const phone=document.getElementById('nc-phone')?.value.trim()||'';
+  const errEl=document.getElementById('nc-error'),phErr=document.getElementById('nc-phone-err');
+  let ok=true;
+  if(!name){if(errEl)errEl.style.display='block';ok=false;}else if(errEl)errEl.style.display='none';
+  if(!overseas&&!isVP(phone)){if(phErr)phErr.style.display='block';ok=false;}else if(phErr)phErr.style.display='none';
+  if(!ok)return;
+  const bdEl=document.getElementById('nc-birthday');
+  const fmt=phone.replace(/[-\s]/g,'').replace(/^(\d{4})(\d{3})(\d{3})$/,'$1-$2-$3');
+  clients.unshift({id:'c'+Date.now(),name,nickname:document.getElementById('nc-nickname')?.value.trim()||'',gender:document.getElementById('nc-gender')?.value||'女',age:document.getElementById('nc-age')?.value||'',phone:overseas?'':fmt,overseas,birthday:bdEl?bdEl.value:'',location:document.getElementById('nc-location')?.value||'台中',source:getSrc('nc-source','nc-source-custom'),note:document.getElementById('nc-note')?.value.trim()||'',tags:[],services:[]});
+  lsSave(STORE_KEY,clients);renderClientList();renderTagBank();
+  ['nc-name','nc-age','nc-phone','nc-note','nc-nickname'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const ncOv=document.getElementById('nc-overseas');if(ncOv){ncOv.checked=false;toggleOverseasNew();}
+  const ncBd=document.getElementById('nc-birthday');if(ncBd)ncBd.value='';
+  closeModal('modal-add-client');showToast('✅ 已新增：'+name);
+}
+
+// ── JUMP TO RECORD ──
+function jumpToRecordBySvc(svc){closeModal('modal-client-detail');setTimeout(()=>{openAddRecord();document.querySelectorAll('#rec-service-grid .service-item').forEach(el=>el.classList.toggle('selected',el.dataset.svc===svc));const e=document.getElementById('rec-svc-err');if(e)e.style.display='none';},250);}
+
+// ── RECORDS ──
+function renderRecords(cid){
+  const rs=(recordsDB[cid]||[]).slice().sort((a,b)=>b.date.localeCompare(a.date));
+  const con=document.getElementById('dt-record');if(!con)return;
+  const addBtn=`<button class="btn btn-primary btn-full" style="margin-top:12px" onclick="openAddRecord()">＋ 新增施作紀錄</button>`;
+  if(!rs.length){con.innerHTML=`<div class="empty"><div class="empty-icon">📋</div><p>尚無施作紀錄</p></div>${addBtn}`;return;}
+  con.innerHTML=`<div class="timeline">${rs.map(r=>`<div class="tl-item"><div class="tl-dot"></div><div class="tl-content">
+    <div class="flex-between"><div class="tl-date">${r.date}</div><span class="amount-pill">NT$ ${Number(r.amount||0).toLocaleString()}</span></div>
+    <div class="tl-text fw6">${(SVC[r.svc]||{}).icon||''} ${r.svc}</div>
+    <div class="tl-detail">針具：${r.needle||'—'} ｜ 色號：${r.color||'—'}<br>${r.note||''}</div>
+    ${(r.tags||[]).length?`<div class="tag-row mt4">${r.tags.map((t,i)=>`<span class="tag ${TC[i%TC.length]}" style="font-size:11px;padding:2px 7px">${t}</span>`).join('')}</div>`:''}
+    <div style="display:flex;gap:6px;margin-top:6px"><button class="btn btn-secondary btn-xs" onclick="openEditRec('${r.id}')">✏️ 編輯</button><button class="btn btn-danger btn-xs" onclick="confirmDelRec('${r.id}','${r.svc}')">🗑 刪除</button></div>
+  </div></div>`).join('')}</div>${addBtn}`;
+}
+function openAddRecord(){currentRecordId=null;const t=document.querySelector('#modal-add-record .modal-title');if(t)t.textContent='新增施作紀錄';document.querySelectorAll('#rec-service-grid .service-item').forEach(el=>el.classList.remove('selected'));['rec-date','rec-needle','rec-color','rec-amount','rec-note'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});const tc=document.getElementById('rec-tag-container');if(tc)tc.innerHTML='';['rec-svc-err','rec-date-err','rec-amount-err'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});renderRecTags();openModal('modal-add-record');}
+function openEditRec(recId){const rs=recordsDB[currentClientId]||[];const rec=rs.find(r=>r.id===recId);if(!rec)return;currentRecordId=recId;const t=document.querySelector('#modal-add-record .modal-title');if(t)t.textContent='編輯施作紀錄';document.querySelectorAll('#rec-service-grid .service-item').forEach(el=>el.classList.toggle('selected',el.dataset.svc===rec.svc));const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};sv('rec-date',rec.date);sv('rec-needle',rec.needle);sv('rec-color',rec.color);sv('rec-amount',rec.amount);sv('rec-note',rec.note);const tc=document.getElementById('rec-tag-container');if(tc)tc.innerHTML=(rec.tags||[]).map((t,i)=>`<span class="tag ${TC[i%TC.length]}" style="font-size:11px;padding:3px 8px">${t} <span onclick="this.parentElement.remove()" style="cursor:pointer;opacity:0.6">×</span></span>`).join('');renderRecTags();openModal('modal-add-record');}
+function saveRecord(){
+  const sel=document.querySelector('#rec-service-grid .service-item.selected');
+  const date=document.getElementById('rec-date')?.value,amtRaw=document.getElementById('rec-amount')?.value;
+  let ok=true;
+  const show=(id,v,msg)=>{const el=document.getElementById(id);if(!el)return;if(v&&msg)el.textContent=msg;el.style.display=v?'block':'none';};
+  if(!sel){show('rec-svc-err',true,'⚠ 請選擇施作項目');ok=false;}else show('rec-svc-err',false);
+  if(!date){show('rec-date-err',true,'⚠ 請選擇日期');ok=false;}else show('rec-date-err',false);
+  const amt=parseInt(amtRaw)||0;
+  if(!amtRaw||amt<=0||amt%100!==0){show('rec-amount-err',true,'⚠ 金額需為100的倍數');ok=false;}else show('rec-amount-err',false);
+  if(!ok)return;
+  const recTags=[...document.querySelectorAll('#rec-tag-container .tag')].map(el=>el.childNodes[0].textContent.trim()).filter(Boolean);
+  if(!recordsDB[currentClientId])recordsDB[currentClientId]=[];const rs=recordsDB[currentClientId];
+  const data={svc:sel.dataset.svc,date,needle:document.getElementById('rec-needle')?.value.trim()||'',color:document.getElementById('rec-color')?.value.trim()||'',amount:amt,note:document.getElementById('rec-note')?.value.trim()||'',tags:recTags};
+  if(currentRecordId){const idx=rs.findIndex(r=>r.id===currentRecordId);if(idx>-1)rs[idx]={...rs[idx],...data};}
+  else{rs.push({id:'r'+Date.now(),...data});}
+  const c=clients.find(x=>x.id===currentClientId);
+  if(c){const svcs=new Set();rs.forEach(r=>{if(r.svc)svcs.add(r.svc);});c.services=[...svcs];lsSave(STORE_KEY,clients);}
+  if(c&&recTags.length){const ex=new Set(c.tags||[]);recTags.forEach(t=>{ex.add(t);if(!tagBank.includes(t)&&tagBank.length<50)tagBank.push(t);});c.tags=[...ex];lsSave(STORE_KEY,clients);lsSave(TAGBANK_KEY,tagBank);}
+  lsSave(RECORDS_KEY,recordsDB);renderClientList();renderRecords(currentClientId);renderTagBank();closeModal('modal-add-record');showToast(currentRecordId?'✅ 紀錄已更新':'✅ 紀錄已儲存');currentRecordId=null;
+}
+function confirmDelRec(recId,svcName){showConfirm(`確定要刪除這筆「${svcName}」施作紀錄？\n此操作無法復原。`,()=>{recordsDB[currentClientId]=(recordsDB[currentClientId]||[]).filter(r=>r.id!==recId);const c=clients.find(x=>x.id===currentClientId);if(c){const svcs=new Set();(recordsDB[currentClientId]||[]).forEach(r=>{if(r.svc)svcs.add(r.svc);});c.services=[...svcs];lsSave(STORE_KEY,clients);}lsSave(RECORDS_KEY,recordsDB);renderClientList();renderRecords(currentClientId);showToast('🗑 施作紀錄已刪除');});}
+function selectRecSvc(el){document.querySelectorAll('#rec-service-grid .service-item').forEach(x=>x.classList.remove('selected'));el.classList.add('selected');const e=document.getElementById('rec-svc-err');if(e)e.style.display='none';}
+// currentCouponId declared in top block
+function addRecTag(){const input=document.getElementById('rec-tag-input');const val=input?.value.trim();if(!val)return;const tag=document.createElement('span');tag.className=`tag ${TC[recTagIdx++%TC.length]}`;tag.style.cssText='font-size:11px;padding:3px 8px';tag.innerHTML=`${val} <span onclick="this.parentElement.remove()" style="cursor:pointer;opacity:0.6">×</span>`;document.getElementById('rec-tag-container')?.appendChild(tag);if(input)input.value='';}
+document.addEventListener('change',e=>{if(e.target.id==='rec-amount'){const v=parseInt(e.target.value)||0;const r=Math.round(v/100)*100;if(r!==v)e.target.value=r;}});
+
+// ── COUPONS ──
+function renderCoupons(cid){const cps=couponsDB[cid]||[];const con=document.getElementById('coupon-list-container');if(!con)return;if(!cps.length){con.innerHTML=`<div class="empty"><div class="empty-icon">🎁</div><p>尚無優惠紀錄</p></div>`;return;}con.innerHTML=cps.map(cp=>{const exp=cpExp(cp);const expStr=exp?fDisp(exp):'無期限';const used=cp.status==='used';return `<div style="background:${used?'var(--bg2)':'var(--card)'};border:1px solid ${used?'var(--border2)':'var(--border)'};border-radius:10px;padding:10px 12px;margin-bottom:8px;${used?'opacity:0.65':''}"><div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">${cp.type}</div><div style="font-size:12px;color:var(--text2);margin-top:2px">${cp.desc}${cp.amount>0?' ・ $'+cp.amount:''}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">發放：${cp.issued} ｜ 期限：${expStr}</div></div><div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0"><button onclick="toggleCoupon('${cp.id}')" style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;border:1px solid ${used?'var(--border2)':'var(--accent)'};background:${used?'var(--bg2)':'var(--accent)'};color:${used?'var(--text3)':'white'};cursor:pointer;white-space:nowrap">${used?'✅ 已使用':'○ 未使用'}</button><div style="display:flex;gap:4px"><button class="btn btn-secondary btn-xs" onclick="editCoupon('${cp.id}')">✏️</button><button class="btn btn-danger btn-xs" onclick="delCoupon('${cp.id}','${cp.type}')">🗑</button></div></div></div></div>`;}).join('');}
+function toggleCoupon(cpId){const cps=couponsDB[currentClientId]||[];const cp=cps.find(x=>x.id===cpId);if(!cp)return;cp.status=cp.status==='used'?'unused':'used';if(cp.status==='used'&&cp.type.includes('生日')){remindedDB[`${currentClientId}|bcp|${cpId}`]=true;lsSave(REMINDED_KEY,remindedDB);}lsSave(COUPONS_KEY,couponsDB);renderCoupons(currentClientId);}
+function openAddCoupon(){currentCouponId=null;document.getElementById('coupon-modal-title').textContent='新增優惠';const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};sv('cp-type','🎂 生日優惠');sv('cp-desc','');sv('cp-amount','');sv('cp-issued',fD(NOW));sv('cp-validity','1y');sv('cp-status','unused');const e=document.getElementById('cp-err');if(e)e.style.display='none';openModal('modal-add-coupon');}
+function editCoupon(cpId){const cps=couponsDB[currentClientId]||[];const cp=cps.find(x=>x.id===cpId);if(!cp)return;currentCouponId=cpId;document.getElementById('coupon-modal-title').textContent='編輯優惠';const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};sv('cp-type',cp.type);sv('cp-desc',cp.desc);sv('cp-amount',cp.amount||0);sv('cp-issued',cp.issued);sv('cp-validity',cp.validity);sv('cp-status',cp.status);const e=document.getElementById('cp-err');if(e)e.style.display='none';openModal('modal-add-coupon');}
+function saveCoupon(){if(!couponsDB[currentClientId])couponsDB[currentClientId]=[];const cps=couponsDB[currentClientId];const data={type:document.getElementById('cp-type')?.value,desc:document.getElementById('cp-desc')?.value.trim()||'',amount:parseInt(document.getElementById('cp-amount')?.value)||0,issued:document.getElementById('cp-issued')?.value||fD(NOW),validity:document.getElementById('cp-validity')?.value||'1y',status:document.getElementById('cp-status')?.value||'unused'};if(currentCouponId){const idx=cps.findIndex(x=>x.id===currentCouponId);if(idx>-1)cps[idx]={...cps[idx],...data};}else{cps.push({id:'cp'+Date.now(),...data});}lsSave(COUPONS_KEY,couponsDB);renderCoupons(currentClientId);closeModal('modal-add-coupon');showToast(currentCouponId?'✅ 優惠已更新':'✅ 優惠已新增');currentCouponId=null;}
+function delCoupon(cpId,typeName){showConfirm(`確定刪除「${typeName}」優惠？`,()=>{couponsDB[currentClientId]=(couponsDB[currentClientId]||[]).filter(x=>x.id!==cpId);lsSave(COUPONS_KEY,couponsDB);renderCoupons(currentClientId);showToast('🗑 優惠已刪除');});}
+// currentCouponId declared in top block
+
+// ── COST PAGE (with month selector) ──
+function renderCostPage(){
+  const mTc=getIncomeForMonth(costYear,costMonth,'台中');
+  const mTp=getIncomeForMonth(costYear,costMonth,'台北');
+  const mTcN=getRecCountForMonth(costYear,costMonth,'台中');
+  const mTpN=getRecCountForMonth(costYear,costMonth,'台北');
+  const se=document.getElementById('cost-income-summary');
+  if(se)se.innerHTML=`<div class="stat-card" style="flex:1.4;cursor:pointer" onclick="openSummaryModal('cost_detail')"><div class="stat-label">台中收入</div><div class="stat-value" style="font-size:18px;color:var(--accent)">$${mTc.toLocaleString()}</div><div class="stat-sub">${mTcN} 筆 › 點開明細</div></div><div class="stat-card" style="flex:1;cursor:pointer" onclick="openSummaryModal('cost_detail')"><div class="stat-label">台北收入</div><div class="stat-value" style="font-size:16px;color:var(--blue)">$${mTp.toLocaleString()}</div><div class="stat-sub">${mTpN} 筆 › 點開明細</div></div>`;
+  const lb=document.getElementById('cost-month-label');if(lb)lb.textContent=`${costYear}年${costMonth+1}月`;
+  renderCostSvc(currentCostSvc);renderExpSvc(currentExpSvc);
+}
+function getIncomeForMonth(y,m,loc){
+  let total=0;Object.entries(recordsDB).forEach(([cid,rs])=>{const c=clients.find(x=>x.id===cid);if(loc&&c?.location!==loc)return;(rs||[]).forEach(r=>{const d=pd(r.date);if(d&&d.getFullYear()===y&&d.getMonth()===m)total+=Number(r.amount)||0;});});return total;}
+function getRecCountForMonth(y,m,loc){let cnt=0;Object.entries(recordsDB).forEach(([cid,rs])=>{const c=clients.find(x=>x.id===cid);if(loc&&c?.location!==loc)return;(rs||[]).forEach(r=>{const d=pd(r.date);if(d&&d.getFullYear()===y&&d.getMonth()===m)cnt++;});});return cnt;}
+function costPrevMonth(){if(--costMonth<0){costMonth=11;costYear--;}renderCostPage();}
+function costNextMonth(){if(++costMonth>11){costMonth=0;costYear++;}renderCostPage();}
+
+function switchCostSvc(btn,svc){currentCostSvc=svc;document.querySelectorAll('#cost-income-tabs .pill-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderCostSvc(svc);}
+function switchExpenseSvc(btn,svc){currentExpSvc=svc;document.querySelectorAll('#cost-expense-tabs .pill-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderExpSvc(svc);}
+
+function renderCostSvc(svc){
+  const allRm=[];Object.entries(recordsDB).forEach(([cid,rs])=>{const c=clients.find(x=>x.id===cid);(rs||[]).filter(r=>r.svc===svc).forEach(r=>allRm.push({...r,clientId:cid,clientName:c?c.name:'?'}));});
+  const mR=allRm.filter(r=>{const d=pd(r.date);return d&&d.getFullYear()===costYear&&d.getMonth()===costMonth;});
+  const mT=mR.reduce((s,r)=>s+r.amount,0);
+  const el=document.getElementById('cost-income-body');if(!el)return;
+  el.innerHTML=`<div class="card" style="margin-top:8px"><div class="card-header" style="background:var(--accent-pale)"><span>${(SVC[svc]||{}).icon||''}</span><span class="card-title text-accent">${svc} 收費</span><button class="btn btn-primary btn-xs" style="margin-left:auto" onclick="openCostClientSearch()">＋ 搜尋客戶新增</button></div><div style="overflow-x:auto"><table class="cost-table"><tr><th>客戶</th><th>日期</th><th>金額</th><th></th></tr>${mR.length===0?`<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:16px">本月尚無紀錄</td></tr>`:mR.map(r=>`<tr><td style="cursor:pointer;color:var(--accent);font-weight:600" onclick="openClientDetail('${r.clientId}')">${r.clientName}</td><td>${fMD(r.date)}</td><td>$${Number(r.amount).toLocaleString()}</td><td><button class="btn btn-secondary btn-xs" onclick="openRecordInDetail('${r.clientId}','${r.id}')">→</button></td></tr>`).join('')}</table></div><div style="padding:8px 14px;border-top:1px solid var(--border);display:flex;justify-content:space-between"><span class="text-muted">本月小計</span><span class="amount-pill">$${mT.toLocaleString()}</span></div></div>`;
+}
+function renderExpSvc(svc){
+  const expKey=svc==='眉毛'||svc==='霧唇'||svc==='髮際線'?'眉毛/霧唇/髮際線':svc;
+  const allExps=(expensesDB[expKey]||[]).sort((a,b)=>b.date.localeCompare(a.date));
+  // Filter to selected month for display in table
+  const exps=allExps.filter(r=>{const d=pd(r.date);return d&&d.getFullYear()===costYear&&d.getMonth()===costMonth;});
+  const mT=exps.reduce((s,r)=>s+(Number(r.amount)||0),0);
+  const yT=allExps.filter(r=>{const d=pd(r.date);return d&&d.getFullYear()===costYear;}).reduce((s,r)=>s+(Number(r.amount)||0),0);
+  const el=document.getElementById('cost-expense-body');if(!el)return;
+  const lbl=svc==='眉毛'||svc==='霧唇'||svc==='髮際線'?'眉毛・霧唇・髮際線':svc;
+  el.innerHTML=`<div class="card" style="margin-top:8px"><div class="card-header" style="background:var(--red-pale)"><span>${(SVC[svc]||{}).icon||''}</span><span class="card-title" style="color:var(--red)">${lbl} 支出</span><button class="btn btn-danger btn-xs" style="margin-left:auto" onclick="openAddExpense('${expKey}')">＋ 新增</button></div><div style="padding:8px 14px;background:var(--bg2);display:flex;gap:12px"><div style="flex:1;text-align:center"><div style="font-size:11px;color:var(--text3)">本月支出</div><div style="font-size:15px;font-weight:700;color:var(--red)">$${mT.toLocaleString()}</div></div><div style="width:1px;background:var(--border)"></div><div style="flex:1;text-align:center"><div style="font-size:11px;color:var(--text3)">本年支出</div><div style="font-size:15px;font-weight:700;color:var(--amber)">$${yT.toLocaleString()}</div></div></div><div style="overflow-x:auto"><table class="cost-table" style="font-size:12px"><tr><th style="width:20%;text-align:left">名稱</th><th style="text-align:right">管道</th><th style="text-align:right">日期</th><th style="text-align:right">金額</th><th style="text-align:right">操作</th></tr>${exps.length===0?`<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:14px">尚無支出</td></tr>`:exps.map(r=>`<tr><td style="font-weight:500">${r.item}</td><td style="color:var(--text3);font-size:11px;text-align:right">${r.channel||''}</td><td style="color:var(--text3);text-align:right">${fMD(r.date)}</td><td style="font-weight:600;text-align:right">$${Number(r.amount).toLocaleString()}</td><td style="text-align:right"><div style="display:flex;gap:2px;justify-content:flex-end"><button class="btn btn-secondary btn-xs" onclick="openEditExpense('${expKey}','${r.id}')" style="padding:3px 6px;font-size:10px">✏️</button><button class="btn btn-danger btn-xs" onclick="confirmDelExp('${expKey}','${r.id}')" style="padding:3px 6px;font-size:10px">🗑</button></div></td></tr>`).join('')}</table></div></div>`;
+}
+
+function openAddExpense(expKey){currentExpenseId=null;currentExpSvc=expKey;document.getElementById('expense-modal-title').textContent='新增支出（'+expKey+'）';['expense-date','expense-amount','expense-note'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});const ded=document.getElementById('expense-date');if(ded)ded.value=fD(NOW);const e=document.getElementById('expense-err');if(e)e.style.display='none';const items=SVC_ITEMS[expKey]||SVC_ITEMS['睫毛'],channels=SVC_CHANNELS[expKey]||SVC_CHANNELS['睫毛'];const g=document.getElementById('expense-item-grid');if(g)g.innerHTML=items.map(t=>`<span onclick="selExpItem('${t}')" style="padding:4px 10px;border-radius:14px;font-size:12px;cursor:pointer;background:var(--bg2);border:1px solid var(--border);color:var(--text2)">${t}</span>`).join('');const cs=document.getElementById('expense-channel');if(cs)cs.innerHTML=channels.map(ch=>`<option>${ch}</option>`).join('');const ci=document.getElementById('expense-item-custom');if(ci)ci.value='';openModal('modal-add-expense');}
+function openEditExpense(expKey,id){const exp=(expensesDB[expKey]||[]).find(x=>x.id===id);if(!exp)return;currentExpenseId=id;currentExpSvc=expKey;document.getElementById('expense-modal-title').textContent='編輯支出（'+expKey+'）';const items=SVC_ITEMS[expKey]||SVC_ITEMS['睫毛'],channels=SVC_CHANNELS[expKey]||SVC_CHANNELS['睫毛'];const g=document.getElementById('expense-item-grid');if(g)g.innerHTML=items.map(t=>`<span onclick="selExpItem('${t}')" style="padding:4px 10px;border-radius:14px;font-size:12px;cursor:pointer;background:var(--bg2);border:1px solid var(--border);color:var(--text2)">${t}</span>`).join('');const cs=document.getElementById('expense-channel');if(cs){cs.innerHTML=channels.map(ch=>`<option>${ch}</option>`).join('');cs.value=exp.channel||channels[0];}const ci=document.getElementById('expense-item-custom');if(ci)ci.value=exp.item;const sv=(id2,v)=>{const el=document.getElementById(id2);if(el)el.value=v||'';};sv('expense-date',exp.date);sv('expense-amount',exp.amount);sv('expense-note',exp.note);openModal('modal-add-expense');}
+function selExpItem(name){const el=document.getElementById('expense-item-custom');if(el)el.value=name;document.querySelectorAll('#expense-item-grid span').forEach(s=>{const ok=s.textContent===name;s.style.background=ok?'var(--accent-pale)':'var(--bg2)';s.style.color=ok?'var(--accent)':'var(--text2)';s.style.borderColor=ok?'var(--accent)':'var(--border)';});}
+function saveExpense(){const item=document.getElementById('expense-item-custom')?.value.trim(),date=document.getElementById('expense-date')?.value,amount=parseInt(document.getElementById('expense-amount')?.value)||0;const e=document.getElementById('expense-err');if(!item){if(e){e.textContent='⚠ 請選擇或輸入耗材名稱';e.style.display='block';}return;}if(!date){if(e){e.textContent='⚠ 請選擇日期';e.style.display='block';}return;}if(!amount){if(e){e.textContent='⚠ 請輸入金額';e.style.display='block';}return;}if(e)e.style.display='none';if(!expensesDB[currentExpSvc])expensesDB[currentExpSvc]=[];const exps=expensesDB[currentExpSvc];const data={item,date,amount,channel:document.getElementById('expense-channel')?.value||'',note:document.getElementById('expense-note')?.value.trim()||''};if(currentExpenseId){const idx=exps.findIndex(x=>x.id===currentExpenseId);if(idx>-1)exps[idx]={...exps[idx],...data};}else{exps.push({id:'e'+Date.now(),...data});}lsSave(EXPENSE_KEY,expensesDB);renderExpSvc(currentExpSvc);closeModal('modal-add-expense');showToast(currentExpenseId?'✅ 支出已更新':'✅ 支出已新增');currentExpenseId=null;}
+function confirmDelExp(expKey,id){showConfirm('確定刪除此支出紀錄？',()=>{expensesDB[expKey]=(expensesDB[expKey]||[]).filter(x=>x.id!==id);lsSave(EXPENSE_KEY,expensesDB);renderExpSvc(currentExpSvc);showToast('🗑 支出已刪除');});}
+// currentCouponId declared in top block
+
+// ── COST CLIENT SEARCH ──
+function openCostClientSearch(){const el=document.getElementById('cost-client-search');if(el)el.value='';costClientSearch('');openModal('modal-cost-search');}
+function costClientSearch(q){
+  const be=document.getElementById('cost-client-results');if(!be)return;
+  const query=q.trim().toLowerCase();
+  const found=query?clients.filter(c=>c.name.toLowerCase().includes(query)||(c.nickname||'').toLowerCase().includes(query)):clients;
+  const sorted=[...found].sort((a,b)=>(lastRec(b)||'').localeCompare(lastRec(a)||''));
+  be.innerHTML=sorted.length?sorted.map(c=>{const lr=lastRec(c);const loc=c.location==='台中'?`<span class="loc-badge loc-tc">台中</span>`:`<span class="loc-badge loc-tp">台北</span>`;return`<div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="goToClientRecord('${c.id}')">${loc}<div style="flex:1;min-width:0"><span style="font-size:13px;font-weight:600;color:var(--accent)">${c.name}${c.nickname?` <span style="font-size:11px;color:var(--text3)">（${c.nickname}）</span>`:''}</span><div style="font-size:11px;color:var(--text3)">最後施作：${lr||'尚無紀錄'}</div></div><button class="btn btn-primary btn-xs">→ 新增</button></div>`;}).join(''):`<div class="empty"><p>找不到客戶</p></div>`;}
+function goToClientRecord(cid){closeModal('modal-cost-search');currentClientId=cid;setTimeout(()=>{openClientDetail(cid);setTimeout(()=>{const recTab=document.querySelector('#modal-client-detail .pill-tabs .pill-tab:nth-child(2)');if(recTab)switchDetailTab(recTab,'dt-record');setTimeout(()=>openAddRecord(),200);},200);},200);}
+
+// ── REMINDER ──
+function genReminders(){const rs=[];const now=new Date();clients.forEach(c=>{if(c.birthday){const bd=pd(c.birthday);if(bd){const ty=new Date(now.getFullYear(),bd.getMonth(),bd.getDate());const cps=(couponsDB[c.id]||[]).filter(cp=>cp.type.includes('生日')&&cp.status==='unused');cps.forEach(cp=>{let rd=bd.getDate()>15?new Date(ty.getFullYear(),ty.getMonth()-1,1):new Date(ty.getFullYear(),ty.getMonth(),1);const key=`${c.id}|bcp|${cp.id}`;if(cp.status==='used')remindedDB[key]=true;rs.push({clientId:c.id,clientName:c.name,svc:'生日',label:`🎂 生日優惠提醒（${fDisp(ty)}）`,dueDate:rd,key,phone:c.phone,lineUrl:c.lineUrl||''});});const key=`${c.id}|bd|${now.getFullYear()}`;rs.push({clientId:c.id,clientName:c.name,svc:'生日',label:'🎂 生日祝福',dueDate:ty,key,phone:c.phone,lineUrl:c.lineUrl||''});}}(recordsDB[c.id]||[]).forEach(rec=>{const base=pd(rec.date);if(!base)return;const mk=(label,days,months)=>{const due=months?addM(base,months):addD(base,days);rs.push({clientId:c.id,clientName:c.name,svc:rec.svc,label,dueDate:due,key:`${c.id}|${rec.id}|${label}`,phone:c.phone,lineUrl:c.lineUrl||''});};if(rec.svc==='睫毛'){mk('第一次關心',cfg.lash[0]);mk('三週回補提醒',cfg.lash[1]);mk('長期回訪詢問',0,cfg.lash[2]);}else if(rec.svc==='眉毛'){mk('第一次關心',cfg.brow[0]);mk('照片回傳',cfg.brow[1]);mk('回補提醒',0,cfg.brow[2]);mk('長期回補詢問',0,cfg.brow[3]);}else if(rec.svc==='霧唇'||rec.svc==='髮際線'){mk('照片回傳①',cfg.lip[0]);mk('照片回傳②',cfg.lip[1]);mk('照片回傳③',cfg.lip[2]);mk('照片回傳④',cfg.lip[3]);mk('回補提醒',0,cfg.lip[4]);mk('長期回補詢問',0,cfg.lip[5]);}});});return rs.sort((a,b)=>a.dueDate-b.dueDate);}
+function renderRemindPage(){const now=dOnly(new Date());const wEnd=eow(now);const mEnd=new Date(now.getFullYear(),now.getMonth()+1,0);const all=genReminders();const ti=all.filter(r=>dOnly(r.dueDate).getTime()===now.getTime());const wi=all.filter(r=>{const d=dOnly(r.dueDate);return d>now&&d<=wEnd;});const pi=all.filter(r=>dOnly(r.dueDate)<now&&!remindedDB[r.key]);const mi=all.filter(r=>{const d=dOnly(r.dueDate);return d>wEnd&&d<=mEnd;});const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};set('remind-today-date',fDisp(now));set('remind-pending-count',pi.length+' 筆');const rl=(items,cid,empty)=>{const el=document.getElementById(cid);if(!el)return;el.innerHTML=items.length?items.map(remItemHtml).join(''):`<div style="color:var(--text3);font-size:12px;padding:6px 0 10px;text-align:center">${empty}</div>`;};rl(ti,'remind-today-list','今日無提醒 ✅');rl(wi,'remind-week-list','本週（今日以外）無提醒');rl(pi,'remind-pending-list','✅ 無未完成提醒');rl(mi,'remind-month-list','本月剩餘無其他提醒');}
+function remItemHtml(r){const done=!!remindedDB[r.key];const ip=dOnly(r.dueDate)<dOnly(new Date())&&!done;const si=(SVC[r.svc]||{}).icon||'📌';const bc=ip?'var(--red)':done?'var(--border2)':'var(--accent)';const bg=done?'var(--bg2)':ip?'var(--red-pale)':'var(--card)';return `<div style="background:${bg};border:1px solid ${bc};border-radius:10px;padding:10px 12px;margin-bottom:8px;${done?'opacity:0.6':''}"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">${si} ${r.clientName}</div><div style="font-size:12px;color:var(--text2);margin-top:2px">${r.label}${r.svc!=='生日'?' ｜ '+r.svc:''}</div><div style="display:flex;align-items:center;gap:8px;margin-top:3px"><span style="font-size:11px;color:var(--text3)">📅 ${fDisp(r.dueDate)}</span><a href="${r.lineUrl||'https://manager.line.biz/'}" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:10px;background:#06C755;color:white;font-size:10px;font-weight:600;text-decoration:none">💬 LINE</a></div></div><button onclick="toggleRemind('${r.key}')" style="flex-shrink:0;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;border:1px solid ${done?'var(--border2)':'var(--accent)'};background:${done?'var(--bg2)':'var(--accent)'};color:${done?'var(--text3)':'white'};cursor:pointer;white-space:nowrap">${done?'✅ 已提醒':'○ 未提醒'}</button></div></div>`;}
+function toggleRemind(key){if(remindedDB[key])delete remindedDB[key];else remindedDB[key]=true;lsSave(REMINDED_KEY,remindedDB);renderRemindPage();}
+function saveReminderConfig(){const v=id=>{const el=document.getElementById(id);return el?parseInt(el.value)||0:0;};cfg.lash=[v('cfg-lash-1'),v('cfg-lash-2'),v('cfg-lash-3')];cfg.brow=[v('cfg-brow-1'),v('cfg-brow-2'),v('cfg-brow-3'),v('cfg-brow-4')];cfg.lip=[v('cfg-lip-1'),v('cfg-lip-2'),v('cfg-lip-3'),v('cfg-lip-4'),v('cfg-lip-5'),v('cfg-lip-6')];lsSave(CFG_KEY,cfg);renderRemindPage();showToast('✅ 提醒設定已儲存');}
+
+// ── STATS ──
+function allRec(){const list=[];Object.entries(recordsDB).forEach(([cid,rs])=>{const c=clients.find(x=>x.id===cid);(rs||[]).forEach(r=>list.push({...r,clientId:cid,clientName:c?c.name:'?',location:c?c.location:'',source:c?c.source:''}));});return list;}
+function sumR(rs){return rs.reduce((s,r)=>s+(Number(r.amount)||0),0);}
+function barChart(rows){if(!rows.length)return'<div style="color:var(--text3);font-size:12px;text-align:center;padding:8px">尚無數據</div>';const max=Math.max(...rows.map(r=>r.val),1);const cols={'睫毛':'var(--accent)','眉毛':'var(--purple)','霧唇':'var(--pink)','髮際線':'var(--blue)','除色':'var(--amber)'};return rows.map(r=>{const pct=Math.round((r.val/max)*100);const col=cols[r.label]||'var(--accent-light)';return`<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px"><span style="font-size:11px;color:var(--text2);text-align:left;flex-shrink:0;width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.icon||''} ${r.label}</span><div style="flex:1;height:8px;background:var(--bg2);border-radius:4px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${col};border-radius:4px"></div></div><span style="font-size:11px;color:var(--text2);width:52px;text-align:right;flex-shrink:0">$${r.val.toLocaleString()}</span></div>`;}).join('');}
+function scHtml(label,val,sub,wide){return`<div class="stat-card" style="${wide?'flex:1.4':'flex:1'};padding:10px 12px"><div class="stat-label" style="font-size:11px">${label}</div><div style="font-size:16px;font-weight:700;color:var(--accent)">$${Number(val).toLocaleString()}</div>${sub?`<div class="stat-sub" style="font-size:10px">${sub}</div>`:''}</div>`;}
+
+function renderStats(){
+  const all=allRec();const nowY=YR;const nowM=NOW.getMonth();
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.innerHTML=v;};
+  // ① month
+  const mR=all.filter(r=>{const d=pd(r.date);return d&&d.getFullYear()===statYear&&d.getMonth()===statMonth;});
+  const mTc=sumR(mR.filter(r=>r.location==='台中')),mTp=sumR(mR.filter(r=>r.location==='台北'));
+  set('stat-month-top',scHtml('台中收入',mTc,mR.filter(r=>r.location==='台中').length+' 筆',true)+scHtml('台北收入',mTp,mR.filter(r=>r.location==='台北').length+' 筆',false));
+  const mBySvc=Object.entries(SVC).map(([s,{icon}])=>({label:s,icon,val:sumR(mR.filter(r=>r.svc===s))})).filter(r=>r.val>0);
+  set('stat-month-body',`<div class="card" style="margin:6px 12px 0"><div class="card-body" style="padding:12px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px"><span style="font-size:15px;font-weight:700;color:var(--text)">本月合計</span><span style="font-size:20px;font-weight:800;color:var(--accent)">$${(mTc+mTp).toLocaleString()}</span></div>${barChart(mBySvc)}</div></div>`);
+  // ② year
+  const yR=all.filter(r=>{const d=pd(r.date);return d&&d.getFullYear()===statYear;});
+  const yTc=sumR(yR.filter(r=>r.location==='台中')),yTp=sumR(yR.filter(r=>r.location==='台北'));
+  set('stat-year-top',scHtml('台中全年',yTc,'',true)+scHtml('台北全年',yTp,'',false));
+  const yBySvc=Object.entries(SVC).map(([s,{icon}])=>({label:s,icon,val:sumR(yR.filter(r=>r.svc===s))})).filter(r=>r.val>0);
+  const srcMap={};yR.forEach(r=>{const s=r.source||'其他';srcMap[s]=(srcMap[s]||0)+r.amount;});
+  const srcRows=Object.entries(srcMap).map(([label,val])=>({label,val})).sort((a,b)=>b.val-a.val);
+  set('stat-year-body',`<div class="card" style="margin:6px 12px 0"><div class="card-body" style="padding:12px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px"><span style="font-size:15px;font-weight:700;color:var(--text)">${statYear}年合計</span><span style="font-size:20px;font-weight:800;color:var(--accent)">$${(yTc+yTp).toLocaleString()}</span></div>${barChart(yBySvc)}<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border)"><div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px">來源追蹤</div>${barChart(srcRows)}</div></div></div>`);
+  // 高價值
+  const hv=clients.filter(c=>sumR(all.filter(r=>r.clientId===c.id&&pd(r.date)?.getFullYear()===statYear))>=15000).sort((a,b)=>sumR(all.filter(r=>r.clientId===b.id&&pd(r.date)?.getFullYear()===statYear))-sumR(all.filter(r=>r.clientId===a.id&&pd(r.date)?.getFullYear()===statYear)));
+  const hv10=hv.slice(0,10);
+  const hvHtml=hv10.length?`<div class="hv-grid">${hv10.map(c=>{const tot=sumR(all.filter(r=>r.clientId===c.id&&pd(r.date)?.getFullYear()===statYear));return`<div class="hv-item" onclick="openClientDetail('${c.id}')"><span class="loc-badge ${c.location==='台中'?'loc-tc':'loc-tp'}" style="font-size:10px;padding:1px 5px">${c.location}</span><span style="font-size:12px;font-weight:700;color:var(--accent);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name}</span><span style="font-size:10px;color:var(--text2);flex-shrink:0">$${(tot/1000).toFixed(0)}k</span></div>`;}).join('')}</div>`:`<div style="color:var(--text3);font-size:12px;text-align:center;padding:6px">尚無年消費超過 $15,000 客戶</div>`;
+  const hvEl=document.getElementById('stat-highval-body');if(hvEl)hvEl.innerHTML=`<div class="card" style="margin:6px 12px 0"><div class="card-body" style="padding:12px"><div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">👑 年消費超過 NT$15,000</div>${hvHtml}</div></div>`;
+  // ③ service cross
+  const svcEl=document.getElementById('stat-svc-cross');
+  if(svcEl){
+    const mCids=new Set(all.filter(r=>{const d=pd(r.date);return d&&d.getFullYear()===nowY&&d.getMonth()===nowM;}).map(r=>r.clientId));
+    const yCids=new Set(all.filter(r=>{const d=pd(r.date);return d&&d.getFullYear()===nowY;}).map(r=>r.clientId));
+    const sRows=Object.entries(SVC).map(([svc,{icon}])=>{const mc=[...mCids].filter(cid=>(recordsDB[cid]||[]).some(r=>{const d=pd(r.date);return r.svc===svc&&d&&d.getFullYear()===nowY&&d.getMonth()===nowM;})).length;const yc=[...yCids].filter(cid=>(recordsDB[cid]||[]).some(r=>{const d=pd(r.date);return r.svc===svc&&d&&d.getFullYear()===nowY;})).length;return{svc,icon,mc,yc};}).filter(r=>r.mc>0||r.yc>0);
+    const mRows=[1,2,3,4,5].map(n=>({n,count:clients.filter(c=>(c.services||[]).length===n).length})).filter(r=>r.count>0);
+    svcEl.innerHTML=`<div class="card" style="margin:6px 12px 0"><div class="card-body" style="padding:12px">${sRows.length?`<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">各服務項目客人數</div><table style="width:100%;font-size:12px"><tr><th style="text-align:left;color:var(--text3);font-weight:500;padding-bottom:4px">服務</th><th style="text-align:center;color:var(--text3);font-weight:500;padding-bottom:4px">本月</th><th style="text-align:center;color:var(--text3);font-weight:500;padding-bottom:4px">本年</th></tr>${sRows.map(r=>`<tr><td style="padding:5px 0;font-weight:500">${r.icon} ${r.svc}</td><td style="text-align:center"><span onclick="openSummaryModal('svc_clients','${r.svc}')" style="cursor:pointer;color:var(--accent);font-weight:700;text-decoration:underline">${r.mc}</span></td><td style="text-align:center"><span onclick="openSummaryModal('svc_clients','${r.svc}')" style="cursor:pointer;color:var(--accent);font-weight:700;text-decoration:underline">${r.yc}</span></td></tr>`).join('')}</table></div>`:''}<div style="display:flex;flex-wrap:wrap;gap:8px">${mRows.map(r=>`<div onclick="openSummaryModal('multi_svc','${r.n}')" style="cursor:pointer;background:var(--accent-pale);border:1px solid #c2d9d3;border-radius:10px;padding:8px 14px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--accent)">${r.count}</div><div style="font-size:11px;color:var(--text2)">施作 ${r.n} 種</div></div>`).join('')}</div></div></div>`;
+  }
+  // ④ all
+  const aTc=sumR(all.filter(r=>r.location==='台中')),aTp=sumR(all.filter(r=>r.location==='台北'));
+  set('stat-all-top',scHtml('台中累計',aTc,'',true)+scHtml('台北累計',aTp,'',false));
+  const aBySvc=Object.entries(SVC).map(([s,{icon}])=>({label:s,icon,val:sumR(all.filter(r=>r.svc===s))})).filter(r=>r.val>0);
+  set('stat-all-body',`<div class="card" style="margin:6px 12px 0"><div class="card-body" style="padding:12px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px"><span style="font-size:15px;font-weight:700;color:var(--text)">歷史合計</span><span style="font-size:20px;font-weight:800;color:var(--accent)">$${sumR(all).toLocaleString()}</span>｜<span style="font-size:12px;color:var(--text3)">${all.length} 筆</span></div>${barChart(aBySvc)}</div></div>`);
+  const lb=document.getElementById('stat-month-label');if(lb)lb.textContent=`${statYear} 年 ${statMonth+1} 月`;
+}
+function statPrevMonth(){if(--statMonth<0){statMonth=11;statYear--;}renderStats();}
+function statNextMonth(){if(++statMonth>11){statMonth=0;statYear++;}renderStats();}
+
+// ── RANGE ANALYSIS ──
+function renderRangeAnalysis(){
+  // Check mode
+  const yearBtn=document.getElementById('range-mode-year');
+  const isYearMode=yearBtn&&yearBtn.classList.contains('active');
+  let rs,re;
+  if(isYearMode){
+    const y=document.getElementById('range-year-select')?.value;
+    if(!y){document.getElementById('range-result').innerHTML='<div style="color:var(--red);font-size:12px">⚠ 請選擇年份</div>';return;}
+    rs=y+'-01';re=y+'-12';
+  }else{
+    rs=document.getElementById('range-start')?.value;
+    re=document.getElementById('range-end')?.value;
+  }
+  const el=document.getElementById('range-result');if(!el)return;
+  if(!rs||!re){el.innerHTML=`<div style="color:var(--red);font-size:12px">⚠ 請選擇開始和結束年月</div>`;return;}
+  const [sy,sm]=rs.split('-').map(Number);
+  const [ey,em]=re.split('-').map(Number);
+  if(sy*12+sm>ey*12+em){el.innerHTML=`<div style="color:var(--red);font-size:12px">⚠ 開始年月不能晚於結束年月</div>`;return;}
+  const all=allRec();
+  const inRange=r=>{const d=pd(r.date);if(!d)return false;const ym=d.getFullYear()*12+d.getMonth();return ym>=sy*12+(sm-1)&&ym<=ey*12+(em-1);};
+  const recs=all.filter(inRange);
+  const tc=sumR(recs.filter(r=>r.location==='台中')),tp=sumR(recs.filter(r=>r.location==='台北'));
+  const total=tc+tp;
+  // expenses in range
+  let expTotal=0;
+  Object.values(expensesDB).forEach(exps=>(exps||[]).forEach(e=>{if(inRange(e))expTotal+=Number(e.amount)||0;}));
+  const bySvc=Object.entries(SVC).map(([s,{icon}])=>({label:s,icon,val:sumR(recs.filter(r=>r.svc===s))})).filter(r=>r.val>0);
+  el.innerHTML=`<div style="background:var(--accent-pale);border-radius:10px;padding:12px;margin-bottom:10px">
+    <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px">${sy}/${sm} ～ ${ey}/${em} 區間報表</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <div><div style="font-size:11px;color:var(--text3)">總收入</div><div style="font-size:18px;font-weight:800;color:var(--accent)">$${total.toLocaleString()}</div></div>
+      <div><div style="font-size:11px;color:var(--text3)">總支出</div><div style="font-size:18px;font-weight:800;color:var(--red)">$${expTotal.toLocaleString()}</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div><div style="font-size:11px;color:var(--text3)">台中收入</div><div style="font-size:14px;font-weight:700;color:var(--accent)">$${tc.toLocaleString()}</div></div>
+      <div><div style="font-size:11px;color:var(--text3)">台北收入</div><div style="font-size:14px;font-weight:700;color:var(--blue)">$${tp.toLocaleString()}</div></div>
+    </div>
+    <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">各服務收入</div>
+    ${barChart(bySvc)}
+    <div style="font-size:11px;color:var(--text3);margin-top:6px">共 ${recs.length} 筆施作紀錄</div>
+  </div>`;
+}
+
+// ── ALL CLIENT SORT ──
+function sortAllClients(mode,btn){
+  document.querySelectorAll('#modal-summary .sort-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderAllClientList(mode);
+}
+function renderAllClientList(mode){
+  const be=document.getElementById('all-client-list');if(!be)return;
+  let list=[...clients];
+  if(mode==='rec')list.sort((a,b)=>(lastRec(b)||'').localeCompare(lastRec(a)||''));
+  else if(mode==='bday')list.sort((a,b)=>{const ba=a.birthday||'',bb=b.birthday||'';return(ba.slice(5)||'99-99').localeCompare(bb.slice(5)||'99-99');});
+  be.innerHTML=list.length?list.map(c=>{const rs=recordsDB[c.id]||[];const last=rs.length?[...rs].sort((a,b)=>b.date.localeCompare(a.date))[0]:null;const tot=rs.reduce((s,r)=>s+(Number(r.amount)||0),0);const bdDisp=c.birthday?c.birthday.slice(5).replace('-','月')+'日':'—';return`<div onclick="closeModal('modal-summary');openClientDetail('${c.id}')" style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer"><span class="loc-badge ${c.location==='台中'?'loc-tc':'loc-tp'}" style="flex-shrink:0">${c.location}</span><div style="flex:1;min-width:0"><span style="font-size:13px;font-weight:600;color:var(--accent)">${c.name}</span><div style="font-size:11px;color:var(--text3)">${mode==='bday'?'🎂 '+bdDisp:'施作：'+(last?last.date:'—')}</div></div><span style="font-size:12px;color:var(--text2)">$${tot.toLocaleString()}</span></div>`;}).join(''):'<div class="empty"><p>尚無客戶</p></div>';}
+
+// ── FILTER / TAG ──
+function setFilter(btn,label){currentFilter=label;document.querySelectorAll('.filter-pill').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderClientList();}
+// currentCouponId declared in top block
+function addTag(){const input=document.getElementById('new-tag-input');const val=input?.value.trim();if(!val)return;const tc=document.getElementById('tag-container');if(!tc)return;if([...tc.querySelectorAll('.tag')].some(el=>el.childNodes[0].textContent.trim()===val)){showToast('此標籤已新增');return;}const tag=document.createElement('span');tag.className=`tag ${TC[tagIdx++%TC.length]}`;tag.innerHTML=`${val} <span class="del" onclick="removeTag(this)">×</span>`;tc.appendChild(tag);if(input)input.value='';}
+function removeTag(el){el.parentElement.remove();}
+
+// ── TAB ──
+function switchTab(name,btn){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));const pg=document.getElementById('page-'+name);if(pg)pg.classList.add('active');if(btn)btn.classList.add('active');const pc=document.querySelector('.page-content');if(pc)pc.scrollTop=0;updateHeaderActions(name);if(name==='stats'){statYear=YR;statMonth=NOW.getMonth();renderStats();}if(name==='remind')renderRemindPage();if(name==='cost')renderCostPage();}
+function switchDetailTab(btn,id){document.querySelectorAll('#modal-client-detail [id^="dt-"]').forEach(el=>el.style.display='none');const el=document.getElementById(id);if(el)el.style.display='block';btn?.closest('.pill-tabs')?.querySelectorAll('.pill-tab').forEach(b=>b.classList.remove('active'));btn?.classList.add('active');}
+function switchCostTab(btn,id){document.querySelectorAll('.cost-section').forEach(s=>s.style.display='none');const el=document.getElementById(id);if(el)el.style.display='block';btn?.closest('.pill-tabs')?.querySelectorAll('.pill-tab').forEach(b=>b.classList.remove('active'));btn?.classList.add('active');}
+function updateHeaderActions(name){const el=document.getElementById('header-actions');if(el)el.style.display=name==='client'?'flex':'none';}
+
+// ── MODAL / TOAST ──
+function openModal(id){const el=document.getElementById(id);if(el)el.classList.add('open');}
+function closeModal(id){const el=document.getElementById(id);if(el)el.classList.remove('open');}
+function closeModalOutside(e,id){if(e.target.classList.contains('modal-overlay'))closeModal(id);}
+function showToast(msg){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#2c2820;color:#faf7f2;padding:10px 20px;border-radius:20px;font-size:13px;z-index:300;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,0.2);transition:opacity 0.3s;pointer-events:none';document.body.appendChild(t);}t.textContent=msg;t.style.opacity='1';clearTimeout(t._timer);t._timer=setTimeout(()=>{t.style.opacity='0';},2500);}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&document.activeElement.id==='rec-tag-input')addRecTag();
+  if(e.key==='Enter'&&document.activeElement.id==='tag-bank-input')addTagToBank();
+  if(e.key==='Enter'&&document.activeElement.id==='new-tag-input')addTag();
+  if(e.key==='Enter'&&document.activeElement.id==='ed-source-custom')saveCustomSource('ed-source','ed-source-custom');
+  if(e.key==='Enter'&&document.activeElement.id==='nc-source-custom')saveCustomSource('nc-source','nc-source-custom');
+  if(e.key==='Enter'&&document.activeElement.id==='cost-client-search'){
+    const v=document.getElementById('cost-client-search')?.value||'';costClientSearch(v);
+  }
+});
+
+function loadCfg(){const s=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};s('cfg-lash-1',cfg.lash[0]);s('cfg-lash-2',cfg.lash[1]);s('cfg-lash-3',cfg.lash[2]);s('cfg-brow-1',cfg.brow[0]);s('cfg-brow-2',cfg.brow[1]);s('cfg-brow-3',cfg.brow[2]);s('cfg-brow-4',cfg.brow[3]);s('cfg-lip-1',cfg.lip[0]);s('cfg-lip-2',cfg.lip[1]);s('cfg-lip-3',cfg.lip[2]);s('cfg-lip-4',cfg.lip[3]);s('cfg-lip-5',cfg.lip[4]);s('cfg-lip-6',cfg.lip[5]);
+  // set default range to this year
+  const rs=document.getElementById('range-start'),re=document.getElementById('range-end');
+  if(rs)rs.value=`${YR}-01`;if(re)re.value=`${YR}-${String(NOW.getMonth()+1).padStart(2,'0')}`;
+}
+
+// ── AGE DROPDOWN INIT ──
+function initAgeDropdowns(){
+  ['nc-age','ed-age'].forEach(id=>{
+    const sel=document.getElementById(id);if(!sel)return;
+    const cur=sel.value;
+    sel.innerHTML='<option value="">選擇年紀</option>';
+    for(let i=17;i<=65;i++){
+      const o=document.createElement('option');
+      o.value=i;o.textContent=i+' 歲';
+      sel.appendChild(o);
+    }
+    if(cur)sel.value=cur;
+  });
+}
+
+// ── CALC AGE FROM BIRTHDAY ──
+function calcAgeFromBirthday(prefix){
+  const bdEl=document.getElementById(prefix+'-birthday');
+  const ageEl=document.getElementById(prefix+'-age');
+  if(!bdEl||!ageEl||!bdEl.value)return;
+  const bd=new Date(bdEl.value);
+  const today=new Date();
+  let age=today.getFullYear()-bd.getFullYear();
+  const m=today.getMonth()-bd.getMonth();
+  if(m<0||(m===0&&today.getDate()<bd.getDate()))age--;
+  if(age>=1&&age<=80)ageEl.value=age;
+}
+
+// ── RANGE MODE TOGGLE ──
+function setRangeMode(mode){
+  const mEl=document.getElementById('range-month-inputs');
+  const yEl=document.getElementById('range-year-inputs');
+  const mBtn=document.getElementById('range-mode-month');
+  const yBtn=document.getElementById('range-mode-year');
+  if(!mEl||!yEl)return;
+  if(mode==='month'){
+    mEl.style.display=''; yEl.style.display='none';
+    if(mBtn)mBtn.classList.add('active');
+    if(yBtn)yBtn.classList.remove('active');
+  }else{
+    mEl.style.display='none'; yEl.style.display='';
+    if(mBtn)mBtn.classList.remove('active');
+    if(yBtn)yBtn.classList.add('active');
+  }
+}
+
+// Populate year dropdown in range analysis
+function initRangeYears(){
+  const curYear=new Date().getFullYear();
+  // Single year dropdown (year mode)
+  const sel=document.getElementById('range-year-select');
+  if(sel){sel.innerHTML='';for(let y=curYear;y>=curYear-10;y--){const o=document.createElement('option');o.value=y;o.textContent=y+' 年';sel.appendChild(o);}}
+  // From/To year dropdowns (month mode)
+  ['range-year-from','range-year-to'].forEach((id,idx)=>{
+    const s=document.getElementById(id);if(!s)return;
+    s.innerHTML='';
+    for(let y=curYear;y>=curYear-10;y--){const o=document.createElement('option');o.value=y;o.textContent=y+' 年';s.appendChild(o);}
+    if(idx===1)s.value=curYear; else s.value=curYear;
+  });
+}
+
+function setYearRange(){
+  const fy=document.getElementById('range-year-from')?.value;
+  const ty=document.getElementById('range-year-to')?.value;
+  if(fy)document.getElementById('range-start').value=fy+'-01';
+  if(ty)document.getElementById('range-end').value=ty+'-12';
+}
+
+// ── OPEN SPECIFIC RECORD IN CLIENT DETAIL ──
+function openRecordInDetail(clientId,recId){
+  currentClientId=clientId;
+  openClientDetail(clientId);
+  // After modal opens, switch to records tab and highlight the record
+  setTimeout(()=>{
+    const recTab=document.querySelector('#modal-client-detail .pill-tabs .pill-tab:nth-child(2)');
+    if(recTab)switchDetailTab(recTab,'dt-record');
+    // Highlight the specific record
+    setTimeout(()=>{
+      const allItems=document.querySelectorAll('#dt-record .tl-item');
+      allItems.forEach(item=>{
+        // Find the edit button with matching recId
+        const editBtn=item.querySelector(`button[onclick="openEditRec('${recId}')"]`);
+        if(editBtn){
+          item.style.background='var(--accent-pale)';
+          item.style.borderRadius='8px';
+          item.scrollIntoView({behavior:'smooth',block:'center'});
+          setTimeout(()=>{item.style.background='';item.style.borderRadius='';},2500);
+        }
+      });
+    },350);
+  },250);
+}
+
+// ── INIT ──
+async function appInit(){
+  try{
+    // 1. 驗證登入
+    await requireAuth();
+    // 2. 從 Supabase 載入所有資料
+    await initSupabaseData();
+    // 3. 用雲端資料重新賦值
+    clients    = window._db_clients   || defaultClients;
+    recordsDB  = window._db_records   || defaultRecords;
+    remindedDB = window._db_reminded  || {};
+    cfg        = window._db_cfg       || defaultCfg;
+    tagBank    = window._db_tagBank   || defaultTagBank;
+    couponsDB  = window._db_coupons   || defaultCoupons;
+    expensesDB = window._db_expenses  || defaultExpenses;
+    sourcesDB  = window._db_sources   || defaultSources;
+    // 4. 渲染 UI
+    initSourceSelects();
+    initAgeDropdowns();
+    initRangeYears();
+    renderClientList();
+    renderTagBank();
+    loadCfg();
+    updateHeaderActions('client');
+    console.log('✅ 盼盼睫研 CRM 啟動完成（Supabase）');
+  }catch(err){
+    console.error('❌ 初始化錯誤:', err);
+  }
+}
+appInit();
+</script>
+
+</body>
+</html>
